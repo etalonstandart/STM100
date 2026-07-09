@@ -1,0 +1,17 @@
+{
+  "name": "СМТ Мониторинг",
+  "short_name": "СМТ Мониторинг",
+  "description": "Мониторинг установки ПАМ СМТ",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#f0f2f5",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
