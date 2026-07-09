@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Мониторинг СМТ</title>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ===== Светлая и мягкая тема палитры (как в мобильной версии) ===== */
+        :root {
+            --bg-primary: #f0f2f5;
+            --bg-secondary: #ffffff;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --accent-cyan: #0284c7;
+            --accent-blue: #2563eb;
+            --accent-purple: #7c3aed;
+            --accent-orange: #d97706;
+            --accent-pink: #db2777;
+            --shadow-glow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            --radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* ===== Светлый фон с движущимися частицами ===== */
+        #stars-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .app-wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* ===== Шапка ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 32px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-glow);
+        }
+        .logo {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #94a3b8;
+            transition: background 0.4s, box-shadow 0.4s;
+        }
+        .dot.online {
+            background: var(--accent-cyan);
+            box-shadow: 0 0 16px var(--accent-cyan);
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.5); }
+            70% { box-shadow: 0 0 20px 6px rgba(2, 132, 199, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+        }
+
+        /* ===== Навигация ===== */
+        nav {
+            display: flex;
+            gap: 24px;
+        }
+        nav .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 0;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        nav .tab-btn:hover {
+            color: var(--text-primary);
+        }
+        nav .tab-btn.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+        }
+
+        /* ===== Содержимое вкладок ===== */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Сетка карточек статистики ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-glow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: cardAppear 0.5s ease forwards;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(2,132,199,0.03), transparent 70%);
+            pointer-events: none;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(2, 132, 199, 0.25);
+            box-shadow: 0 12px 40px rgba(2, 132, 199, 0.12);
+        }
+        .stat-card .icon {
+            font-size: 1.8rem;
+            line-height: 1;
+            margin-bottom: 10px;
+            opacity: 0.85;
+        }
+        .stat-card .number {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 2.4rem;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+            line-height: 1.2;
+        }
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+        .stat-card .sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .stat-card.accent-cyan .number { color: var(--accent-cyan); }
+        .stat-card.accent-blue .number { color: var(--accent-blue); }
+        .stat-card.accent-purple .number { color: var(--accent-purple); }
+        .stat-card.accent-orange .number { color: var(--accent-orange); }
+        .stat-card.accent-pink .number { color: var(--accent-pink); }
+        .stat-card.accent-green .number { color: #16a34a; }
+
+        .stat-card.clickable {
+            cursor: pointer;
+        }
+        .stat-card.clickable:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 12px 40px rgba(2, 132, 199, 0.18);
+        }
+
+        /* Анимация карточек */
+        .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stat-card:nth-child(2) { animation-delay: 0.1s; }
+        .stat-card:nth-child(3) { animation-delay: 0.15s; }
+        .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+        @keyframes cardAppear {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Список типоразмеров внутри карточки */
+        .model-list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+        }
+        .model-item {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 220px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            padding: 3px 0;
+        }
+        .model-item .model-name {
+            color: var(--text-primary);
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 140px;
+        }
+        .model-item .model-count {
+            font-weight: 600;
+            color: var(--accent-cyan);
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        /* ===== Контейнеры таблиц ===== */
+        .table-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-glow);
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        th {
+            text-align: left;
+            padding: 16px 24px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: #f8fafc;
+        }
+        td {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            vertical-align: middle;
+            color: var(--text-primary);
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        tr:hover td {
+            background: #f1f5f9;
+        }
+        .installer-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.01em;
+        }
+        .count-badge {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        /* Кнопка действия */
+        .action-btn {
+            background: #f8fafc;
+            border: 1px solid rgba(0,0,0,0.08);
+            color: var(--text-secondary);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+        .action-btn:hover {
+            background: rgba(2, 132, 199, 0.08);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.1);
+        }
+        .action-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            display: block;
+        }
+
+        /* ===== Вкладка полного мониторинга (Таблица) ===== */
+        #fullTable {
+            padding: 0;
+            margin: 0;
+        }
+        #fullTable .table-container {
+            border-radius: var(--radius);
+            background: var(--bg-secondary);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-glow);
+        }
+        #fullTable .table-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            background: #f8fafc;
+        }
+        #fullTable .table-toolbar .export-btn {
+            background: rgba(2, 132, 199, 0.08);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        #fullTable .table-toolbar .export-btn:hover {
+            background: rgba(2, 132, 199, 0.15);
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.15);
+        }
+        #fullTable table {
+            font-family: Arial, sans-serif;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+        #fullTable table th,
+        #fullTable table td {
+            padding: 8px 12px;
+            white-space: nowrap;
+            text-align: left;
+        }
+        #fullTable table th {
+            background: #f1f5f9;
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid #cbd5e1;
+        }
+        #fullTable table td {
+            color: #334155;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+
+        /* ===== Модальное окно ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: var(--radius);
+            max-width: 750px;
+            width: 100%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1), 0 0 60px rgba(2, 132, 199, 0.05);
+            animation: modalFade 0.25s ease;
+        }
+        @keyframes modalFade {
+            from { opacity: 0; transform: scale(0.97) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 28px;
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .modal-header h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+        .modal-body {
+            padding: 24px 28px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-body .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 40px 0;
+        }
+        .day-group {
+            margin-bottom: 24px;
+        }
+        .day-group .day-title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 500;
+            font-size: 0.8rem;
+            letter-spacing: 0.04em;
+            color: var(--accent-cyan);
+            background: rgba(2, 132, 199, 0.06);
+            padding: 4px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 12px;
+            border: 1px solid rgba(2, 132, 199, 0.08);
+        }
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            border-radius: 8px;
+            background: #f8fafc;
+            margin-bottom: 6px;
+            border-left: 3px solid rgba(2, 132, 199, 0.3);
+        }
+        .record-item .record-main {
+            display: flex;
+            flex-direction: column;
+        }
+        .record-item .record-main .model {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .record-item .record-main .serial {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .record-item .record-meta {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        .record-item .record-meta .time {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-primary);
+            letter-spacing: 0.02em;
+        }
+        .record-item .record-meta .object-name {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .modal-footer {
+            padding: 16px 28px 20px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            display: flex;
+            justify-content: flex-end;
+        }
+        .modal-footer .btn-close {
+            background: #f1f5f9;
+            border: 1px solid rgba(0,0,0,0.08);
+            padding: 10px 28px;
+            border-radius: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-footer .btn-close:hover {
+            background: #e2e8f0;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="stars-canvas"></canvas>
+
+    <div class="app-wrapper">
+        <header class="header">
+            <div class="logo">✦ Мониторинг СМТ</div>
+            <div class="status">
+                <span class="dot" id="connDot"></span>
+                <span id="connText">Подключение к системе…</span>
+            </div>
+            <nav>
+                <button class="tab-btn active" data-target="summary">Сводка</button>
+                <button class="tab-btn" data-target="fullTable">Таблица</button>
+            </nav>
+        </header>
+
+        <div id="summary" class="tab-content active">
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Монтажник</th>
+                                <th style="text-align: center;">Всего установок</th>
+                                <th style="text-align: right;">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summaryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="fullTable" class="tab-content">
+            <div class="table-container">
+                <div class="table-toolbar">
+                    <button class="export-btn" onclick="exportToExcel()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                        Экспорт в XLS
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Монтажник</th>
+                                <th>Объект</th>
+                                <th>Адрес</th>
+                                <th>Расположение</th>
+                                <th>Мощн. (м³/ч)</th>
+                                <th>Модель</th>
+                                <th>№</th>
+                                <th>Пломба</th>
+                                <th>Ст. модель</th>
+                                <th>Ст. №</th>
+                                <th>Ст. показ.</th>
+                                <th>Направл.</th>
+                                <th>SIM</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fullTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="detailsTitle">Детализация</h3>
+                <button class="modal-close" onclick="closeModal('detailsModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="detailsBody">
+                <div class="empty-state">Загрузка данных…</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-close" onclick="closeModal('detailsModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 1. АНИМАЦИЯ ЧАСТИЦ (Светло-синие на светлом фоне)
+        // ============================================================
+        (function initStars() {
+            const canvas = document.getElementById('stars-canvas');
+            const ctx = canvas.getContext('2d');
+            let W, H;
+            const stars = [];
+            const NUM_STARS = 120;
+            const MAX_SPEED = 0.4;
+
+            function resize() {
+                W = canvas.width = window.innerWidth;
+                H = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            for (let i = 0; i < NUM_STARS; i++) {
+                stars.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    r: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * MAX_SPEED + 0.1,
+                    opacity: Math.random() * 0.4 + 0.1,
+                });
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                for (const s of stars) {
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(37, 99, 235, ${s.opacity})`;
+                    ctx.fill();
+                    s.opacity += (Math.random() - 0.5) * 0.01;
+                    s.opacity = Math.min(0.5, Math.max(0.1, s.opacity));
+                    s.y += s.speed * 0.3;
+                    if (s.y > H) {
+                        s.y = 0;
+                        s.x = Math.random() * W;
+                    }
+                }
+                requestAnimationFrame(draw);
+            }
+            draw();
+        })();
+
+        // ============================================================
+        // 2. FIREBASE И ЛОГИКА РАБОТЫ С ДАННЫМИ
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak",
+            authDomain: "botstm100.firebaseapp.com",
+            databaseURL: "https://botstm100-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "botstm100",
+            storageBucket: "botstm100.firebasestorage.app",
+            messagingSenderId: "462080340216",
+            appId: "1:462080340216:web:c452983a1501f0bf170b0d"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref('bot_installations');
+
+        let dbList = [];
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(el => {
+            el.addEventListener('click', (e) => {
+                if (e.target === el) closeModal(el.id);
+            });
+        });
+
+        function parseDateFromString(str) {
+            if (!str) return null;
+            const parts = str.split(',');
+            if (parts.length < 2) return null;
+            const datePart = parts[0].trim().split('.');
+            const timePart = parts[1].trim().split(':');
+            if (datePart.length !== 3 || timePart.length !== 2) return null;
+            const day = parseInt(datePart[0]);
+            const month = parseInt(datePart[1]) - 1;
+            const year = parseInt(datePart[2]);
+            const hour = parseInt(timePart[0]);
+            const minute = parseInt(timePart[1]);
+            return new Date(year, month, day, hour, minute);
+        }
+
+        function extractMeterSize(model) {
+            if (!model) return '—';
+            const match = model.match(/G(\d{1,2})/i);
+            if (match) {
+                return 'G' + match[1];
+            }
+            return model.substring(0, 10);
+        }
+
+        function renderStats() {
+            const grid = document.getElementById('statsGrid');
+            const totalFiltered = dbList.length;
+
+            const now = new Date();
+            const todayStart = new Date(now);
+            todayStart.setHours(7, 0, 0, 0);
+            const todayEnd = new Date(now);
+            todayEnd.setHours(23, 59, 59, 999);
+            let todayCount = 0;
+            dbList.forEach(item => {
+                const d = parseDateFromString(item.date);
+                if (d && d >= todayStart && d <= todayEnd) todayCount++;
+            });
+
+            let totalPower = 0;
+            dbList.forEach(item => {
+                if (item.totalPower) {
+                    const val = parseFloat(item.totalPower.replace(',', '.'));
+                    if (!isNaN(val)) totalPower += val;
+                }
+            });
+
+            const sizeCount = {};
+            dbList.forEach(item => {
+                if (item.model) {
+                    const size = extractMeterSize(item.model);
+                    if (size && size !== '—') {
+                        sizeCount[size] = (sizeCount[size] || 0) + 1;
+                    }
+                }
+            });
+            const sortedSizes = Object.entries(sizeCount).sort((a, b) => {
+                const numA = parseInt(a[0].replace('G', ''));
+                const numB = parseInt(b[0].replace('G', ''));
+                return numA - numB;
+            });
+
+            let sizesHtml = '';
+            if (sortedSizes.length === 0) {
+                sizesHtml = '<div style="color:var(--text-muted); font-size:0.9rem;">Нет данных</div>';
+            } else {
+                sizesHtml = '<div class="model-list">';
+                sortedSizes.forEach(([size, count]) => {
+                    sizesHtml += `
+                        <div class="model-item">
+                            <span class="model-name" title="${size}">${size}</span>
+                            <span class="model-count">${count}</span>
+                        </div>
+                    `;
+                });
+                sizesHtml += '</div>';
+            }
+
+            grid.innerHTML = `
+                <div class="stat-card accent-cyan">
+                    <div class="icon">📊</div>
+                    <div class="number">${totalFiltered}</div>
+                    <div class="label">Всего установок</div>
+                    <div class="sub">в базе данных</div>
+                </div>
+                <div class="stat-card accent-green clickable" onclick="showTodayDetails()" title="Нажмите для деталей">
+                    <div class="icon">📅</div>
+                    <div class="number">${todayCount}</div>
+                    <div class="label">Сегодня (с 7:00)</div>
+                    <div class="sub">за текущие сутки</div>
+                </div>
+                <div class="stat-card accent-pink">
+                    <div class="icon">⚡</div>
+                    <div class="number">${totalPower.toFixed(1)}</div>
+                    <div class="label">Суммарная мощность</div>
+                    <div class="sub">м³/ч</div>
+                </div>
+                <div class="stat-card accent-purple">
+                    <div class="icon">📦</div>
+                    <div class="label" style="font-weight:600; margin-bottom:4px;">Типоразмеры</div>
+                    ${sizesHtml}
+                </div>
+            `;
+        }
+
+        function showTodayDetails() {
+            const now = new Date();
+            const todayStart = new Date(now);
+            todayStart.setHours(7, 0, 0, 0);
+            const todayEnd = new Date(now);
+            todayEnd.setHours(23, 59, 59, 999);
+
+            const todayRecords = dbList.filter(item => {
+                const d = parseDateFromString(item.date);
+                return d && d >= todayStart && d <= todayEnd;
+            });
+
+            if (todayRecords.length === 0) {
+                document.getElementById('detailsTitle').innerText = 'Сегодня (с 7:00)';
+                document.getElementById('detailsBody').innerHTML = `<div class="empty-state">За сегодня установок нет</div>`;
+                openModal('detailsModal');
+                return;
+            }
+
+            const byInstaller = {};
+            todayRecords.forEach(r => {
+                const inst = r.installer || 'Неизвестно';
+                if (!byInstaller[inst]) byInstaller[inst] = [];
+                byInstaller[inst].push(r);
+            });
+
+            let html = '';
+            Object.keys(byInstaller).sort().forEach(inst => {
+                html += `<div class="day-group">
+                    <div class="day-title">${inst} (${byInstaller[inst].length} шт.)</div>
+                `;
+                byInstaller[inst].forEach(r => {
+                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
+                    html += `
+                        <div class="record-item">
+                            <div class="record-main">
+                                <span class="model">${r.model || '—'}</span>
+                                <span class="serial">№ ${r.serial || '—'}</span>
+                            </div>
+                            <div class="record-meta">
+                                <div class="time">${time}</div>
+                                <div class="object-name">${r.objectName || ''}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            document.getElementById('detailsTitle').innerText = `Сегодня установлено: ${todayRecords.length}`;
+            document.getElementById('detailsBody').innerHTML = html;
+            openModal('detailsModal');
+        }
+
+        function renderSummary() {
+            const tbody = document.getElementById('summaryTableBody');
+            const stats = {};
+            dbList.forEach(item => {
+                const installer = item.installer || 'Неизвестно';
+                if (!stats[installer]) stats[installer] = { count: 0, records: [] };
+                stats[installer].count++;
+                stats[installer].records.push(item);
+            });
+
+            let html = '';
+            const sortedInstallers = Object.keys(stats).sort();
+            if (sortedInstallers.length === 0) {
+                html = `<tr><td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">Нет данных</td></tr>`;
+            } else {
+                sortedInstallers.forEach(inst => {
+                    const count = stats[inst].count;
+                    html += `
+                        <tr>
+                            <td><span class="installer-name">${inst}</span></td>
+                            <td style="text-align: center;"><span class="count-badge">${count}</span></td>
+                            <td style="text-align: right;">
+                                <button class="action-btn" onclick="showInstallerDetails('${inst}')">
+                                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                                    Посмотреть детали
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            tbody.innerHTML = html;
+        }
+
+        function showInstallerDetails(installer) {
+            const records = dbList.filter(item => item.installer === installer);
+
+            if (records.length === 0) {
+                document.getElementById('detailsTitle').innerText = `Монтажник: ${installer}`;
+                document.getElementById('detailsBody').innerHTML = `<div class="empty-state">Нет записей</div>`;
+                openModal('detailsModal');
+                return;
+            }
+
+            const byDay = {};
+            records.forEach(r => {
+                let day = r.date ? r.date.split(',')[0] : 'Без даты';
+                if (!byDay[day]) byDay[day] = [];
+                byDay[day].push(r);
+            });
+
+            const sortedDays = Object.keys(byDay).sort((a, b) => {
+                const dA = parseDateFromString(a + ', 00:00');
+                const dB = parseDateFromString(b + ', 00:00');
+                if (dA && dB) return dB - dA;
+                return 0;
+            });
+
+            let html = '';
+            sortedDays.forEach(day => {
+                const dayRecords = byDay[day];
+                html += `<div class="day-group">
+                    <div class="day-title">${day} (${dayRecords.length} шт.)</div>
+                `;
+                dayRecords.forEach(r => {
+                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
+                    html += `
+                        <div class="record-item">
+                            <div class="record-main">
+                                <span class="model">${r.model || '—'}</span>
+                                <span class="serial">№ ${r.serial || '—'}</span>
+                            </div>
+                            <div class="record-meta">
+                                <div class="time">${time}</div>
+                                <div class="object-name">${r.objectName || ''}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            document.getElementById('detailsTitle').innerText = `Монтажник: ${installer} (${records.length} установок)`;
+            document.getElementById('detailsBody').innerHTML = html;
+            openModal('detailsModal');
+        }
+
+        function renderFullTable() {
+            const tbody = document.getElementById('fullTableBody');
+            let html = '';
+            if (dbList.length === 0) {
+                html = `<tr><td colspan="14" style="text-align:center; padding:24px; color:var(--text-muted);">Нет записей</td></tr>`;
+            } else {
+                dbList.forEach(item => {
+                    html += `<tr>
+                        <td>${item.installer || '-'}</td>
+                        <td>${item.objectName || '-'}</td>
+                        <td>${item.address || '-'}</td>
+                        <td>${item.uirgLocation || '-'}</td>
+                        <td>${item.totalPower || '-'}</td>
+                        <td>${item.model || '-'}</td>
+                        <td>${item.serial || '-'}</td>
+                        <td>${item.controllerSeal || '-'}</td>
+                        <td>${item.oldMeterModel || '-'}</td>
+                        <td>${item.oldMeterSerial || '-'}</td>
+                        <td>${item.oldMeterReadings || '-'}</td>
+                        <td>${item.newGasDirection || '-'}</td>
+                        <td>${item.simCardNumber || '-'}</td>
+                        <td>${item.date || '-'}</td>
+                    </tr>`;
+                });
+            }
+            tbody.innerHTML = html;
+        }
+
+        function exportToExcel() {
+            if (dbList.length === 0) {
+                alert('Нет данных для выгрузки.');
+                return;
+            }
+
+            const headers = [
+                'Монтажник', 'Объект', 'Адрес', 'Расположение',
+                'Мощн. (м³/ч)', 'Модель', '№', 'Пломба',
+                'Ст. модель', 'Ст. №', 'Ст. показ.', 'Направл.',
+                'SIM', 'Дата'
+            ];
+
+            let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
+            html += '<head><meta charset="utf-8"></head>';
+            html += '<body><table>';
+
+            html += '<tr>';
+            headers.forEach(h => {
+                html += `<th style="background:#f1f5f9;color:#1e293b;font-weight:bold;border:1px solid #cbd5e1;padding:6px 8px;">${h}</th>`;
+            });
+            html += '</tr>';
+
+            dbList.forEach(item => {
+                html += '<tr>';
+                const cells = [
+                    item.installer || '',
+                    item.objectName || '',
+                    item.address || '',
+                    item.uirgLocation || '',
+                    item.totalPower || '',
+                    item.model || '',
+                    item.serial || '',
+                    item.controllerSeal || '',
+                    item.oldMeterModel || '',
+                    item.oldMeterSerial || '',
+                    item.oldMeterReadings || '',
+                    item.newGasDirection || '',
+                    item.simCardNumber || '',
+                    item.date || ''
+                ];
+                cells.forEach(val => {
+                    html += `<td style="border:1px solid #cbd5e1;padding:4px 6px;mso-number-format:'\\@';">${val}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</table></body></html>';
+
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0,10);
+            a.href = url;
+            a.download = `Установки_${dateStr}.xls`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function renderAll() {
+            renderStats();
+            renderSummary();
+            renderFullTable();
+        }
+
+        // Подключение информирования о сети
+        firebase.database().ref('.info/connected').on('value', snap => {
+            const dot = document.getElementById('connDot');
+            const text = document.getElementById('connText');
+            if (snap.val() === true) {
+                dot.classList.add('online');
+                text.innerText = 'В сети';
+                text.style.color = '#0284c7';
+            } else {
+                dot.classList.remove('online');
+                text.innerText = 'Офлайн';
+                text.style.color = '#64748b';
+            }
+        });
+
+        // Получение записей из Firebase
+        dbRef.on('value', snap => {
+            const data = snap.val();
+            dbList = [];
+            if (data) {
+                for (let key in data) {
+                    dbList.push({ id: key, ...data[key] });
+                }
+            }
+            dbList.sort((a, b) => {
+                const da = parseDateFromString(a.date);
+                const db = parseDateFromString(b.date);
+                if (da && db) return db - da;
+                if (da) return -1;
+                if (db) return 1;
+                return 0;
+            });
+            renderAll();
+        }, err => {
+            console.error('Firebase error:', err);
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card" style="grid-column:1/-1; text-align:center; color:#db2777;">
+                    <div class="icon">⚠️</div>
+                    <div>Ошибка загрузки данных</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted);">${err.message}</div>
+                </div>
+            `;
+        });
+
+        // ============================================================
+        // 3. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+        // ============================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const target = this.dataset.target;
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById(target).classList.add('active');
+                renderAll();
+            });
+        });
+
+        // ============================================================
+        // 4. ИНИЦИАЛИЗАЦИЯ
+        // ============================================================
+        renderAll();
+    </script>
+</body>
+</html>
