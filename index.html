@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>СМТ Мониторинг — Космос</title>
+    <title>СМТ & ПУРГ Мониторинг</title>
     
     <meta name="theme-color" content="#f0f2f5">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="СМТ Мониторинг">
+    <meta name="apple-mobile-web-app-title" content="Мониторинг">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <link rel="apple-touch-icon" href="icon.png">
-    
     <link rel="manifest" href="manifest.json">
 
+    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <!-- SheetJS (для выгрузки в настоящий .xlsx) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -40,11 +43,7 @@
             --radius: 16px;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
@@ -58,63 +57,36 @@
 
         /* ===== Звёздный фон (светлые частицы) ===== */
         #stars-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            pointer-events: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none;
         }
 
         .app-wrapper {
-            position: relative;
-            z-index: 1;
-            max-width: 1400px;
-            margin: 0 auto;
+            position: relative; z-index: 1; max-width: 1500px; margin: 0 auto;
         }
 
         /* ===== Шапка ===== */
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 28px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            margin-bottom: 28px;
-            box-shadow: var(--shadow-glow);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 28px; background: var(--glass-bg);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius);
+            margin-bottom: 24px; box-shadow: var(--shadow-glow);
         }
         .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1.5rem;
-            letter-spacing: 0.05em;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 1.4rem;
+            letter-spacing: 0.05em; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
         .status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
+            display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-secondary);
         }
         .dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #94a3b8;
+            width: 10px; height: 10px; border-radius: 50%; background: #94a3b8;
             transition: background 0.4s, box-shadow 0.4s;
         }
         .dot.online {
-            background: var(--accent-cyan);
-            box-shadow: 0 0 16px var(--accent-cyan);
+            background: var(--accent-cyan); box-shadow: 0 0 16px var(--accent-cyan);
             animation: pulse-dot 2s infinite;
         }
         @keyframes pulse-dot {
@@ -123,540 +95,194 @@
             100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
         }
 
-        /* ===== Навигация (вкладки) ===== */
-        nav {
-            display: flex;
-            gap: 20px;
+        /* ===== Навигация главная (СМТ / ПУРГ) ===== */
+        .main-nav { display: flex; gap: 24px; }
+        .main-tab-btn {
+            background: none; border: none; color: var(--text-muted);
+            font-family: 'Inter', sans-serif; font-size: 1.1rem; font-weight: 600;
+            cursor: pointer; padding: 6px 0; border-bottom: 3px solid transparent; transition: 0.2s;
         }
-        nav .tab-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            padding: 6px 0;
-            border-bottom: 2px solid transparent;
-            transition: color 0.2s, border-color 0.2s;
-        }
-        nav .tab-btn:hover {
-            color: var(--text-primary);
-        }
-        nav .tab-btn.active {
-            color: var(--accent-cyan);
-            border-bottom-color: var(--accent-cyan);
-        }
+        .main-tab-btn:hover { color: var(--text-primary); }
+        .main-tab-btn.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
 
-        /* ===== Табы-контейнеры ===== */
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.2s ease;
+        /* ===== Навигация внутренняя (Сводка / Таблица) ===== */
+        .sub-nav-container { display: flex; justify-content: center; margin-bottom: 24px; }
+        .sub-nav { display: inline-flex; gap: 4px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 12px; }
+        .sub-tab-btn {
+            padding: 8px 28px; border: none; background: transparent; border-radius: 8px;
+            cursor: pointer; color: var(--text-secondary); font-size: 0.95rem; font-weight: 500; transition: 0.2s;
         }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .sub-tab-btn.active { background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 2px 6px rgba(0,0,0,0.05); font-weight: 600; }
 
-        /* ===== Стили для вкладки "Сводка" ===== */
+        .main-tab-content, .sub-tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .main-tab-content.active, .sub-tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== Сводка (Карточки) ===== */
         .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 18px;
-            margin-bottom: 30px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px; margin-bottom: 30px;
         }
         .stat-card {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            padding: 20px 18px;
-            box-shadow: var(--shadow-glow);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
-            cursor: default;
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            background: var(--bg-secondary); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 20px 18px;
+            box-shadow: var(--shadow-glow); transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
+            cursor: default; position: relative; overflow: hidden; text-align: center;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 40%, rgba(2,132,199,0.03), transparent 70%);
-            pointer-events: none;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(2, 132, 199, 0.25);
-            box-shadow: 0 8px 40px rgba(2, 132, 199, 0.12);
-        }
-        .stat-card .icon {
-            font-size: 1.5rem;
-            line-height: 1;
-            margin-bottom: 8px;
-            opacity: 0.8;
-        }
-        .stat-card .number {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 2rem;
-            color: var(--text-primary);
-            letter-spacing: 0.02em;
-            line-height: 1.2;
-        }
-        .stat-card .label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-        .stat-card .sub {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08); }
+        .stat-card.clickable { cursor: pointer; }
+        .stat-card.clickable:hover { border-color: var(--accent-cyan); box-shadow: 0 8px 40px rgba(2, 132, 199, 0.18); }
+        .stat-card.clickable.error-card:hover { border-color: var(--accent-pink); box-shadow: 0 8px 40px rgba(219, 39, 119, 0.18); }
+        
+        .stat-card .icon { font-size: 1.5rem; line-height: 1; margin-bottom: 8px; opacity: 0.8; }
+        .stat-card .number { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 2rem; color: var(--text-primary); line-height: 1.2; margin-bottom: 4px;}
+        .stat-card .label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;}
+        .stat-card .sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+        
         .stat-card.accent-cyan .number { color: var(--accent-cyan); }
         .stat-card.accent-blue .number { color: var(--accent-blue); }
         .stat-card.accent-purple .number { color: var(--accent-purple); }
-        .stat-card.accent-orange .number { color: var(--accent-orange); }
         .stat-card.accent-pink .number { color: var(--accent-pink); }
         .stat-card.accent-green .number { color: #16a34a; }
 
-        .stat-card.clickable {
-            cursor: pointer;
-        }
-        .stat-card.clickable:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 8px 40px rgba(2, 132, 199, 0.18);
-        }
+        /* Списки в карточках */
+        .model-list, .top-errors-list { margin-top: 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
+        .model-item, .top-error-item { display: flex; justify-content: space-between; width: 100%; max-width: 220px; font-size: 0.8rem; color: var(--text-secondary); border-bottom: 1px solid rgba(0,0,0,0.04); padding: 4px 0; }
+        .model-item .model-name, .top-error-item .error-name { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+        .model-item .model-count { font-weight: 600; color: var(--accent-cyan); }
+        .top-error-item .error-count { font-weight: 600; color: var(--accent-pink); background: #fdf2f8; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;}
 
-        .model-list {
-            margin-top: 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            width: 100%;
-        }
-        .model-item {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 200px;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-            padding: 2px 0;
-        }
-        .model-item .model-name {
-            color: var(--text-primary);
-            font-weight: 400;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 130px;
-        }
-        .model-item .model-count {
-            font-weight: 600;
-            color: var(--accent-cyan);
-            flex-shrink: 0;
-            margin-left: 8px;
-        }
-
+        /* ===== Таблицы ===== */
         .table-container {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: var(--shadow-glow);
+            background: var(--bg-secondary); border: 1px solid var(--glass-border);
+            border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-glow);
         }
-        .table-header {
-            padding: 16px 24px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 0.03em;
-            color: var(--text-secondary);
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            text-transform: uppercase;
-            display: none;
+        .table-toolbar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); background: #f8fafc; gap: 10px;
         }
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+        .search-box {
+            flex: 1; max-width: 300px; position: relative;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
+        .search-box input {
+            width: 100%; padding: 8px 12px 8px 32px; border-radius: 8px; border: 1px solid #cbd5e1;
+            font-family: 'Inter', sans-serif; font-size: 0.85rem; outline: none; transition: 0.2s;
         }
+        .search-box input:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
+        .search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #94a3b8; }
+
+        .export-btn {
+            background: rgba(2, 132, 199, 0.08); border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan); padding: 8px 16px; border-radius: 8px; cursor: pointer;
+            font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 500;
+            transition: all 0.25s; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap;
+        }
+        .export-btn:hover { background: rgba(2, 132, 199, 0.15); box-shadow: 0 0 20px rgba(2, 132, 199, 0.15); }
+        
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 650px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th {
-            text-align: left;
-            padding: 14px 20px;
-            color: var(--text-secondary);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            background: #f8fafc;
+            text-align: left; padding: 12px 16px; color: var(--text-secondary);
+            font-weight: 600; font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 0.04em; background: #f8fafc; border-bottom: 2px solid #cbd5e1;
+            white-space: nowrap; position: sticky; top: 0; z-index: 10;
         }
         td {
-            padding: 14px 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.04);
-            vertical-align: middle;
-            color: var(--text-primary);
+            padding: 12px 16px; border-bottom: 1px solid rgba(0,0,0,0.04);
+            vertical-align: middle; color: var(--text-primary); white-space: nowrap;
         }
-        tr:last-child td {
-            border-bottom: none;
-        }
-        tr:hover td {
-            background: #f1f5f9;
-        }
-        .installer-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: 0.01em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 150px;
-            display: inline-block;
-        }
-        .count-badge {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            background: none;
-            padding: 0;
-            border: none;
-        }
-        .action-btn {
-            background: #f8fafc;
-            border: 1px solid rgba(0,0,0,0.08);
-            color: var(--text-secondary);
-            padding: 6px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.25s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0;
-            font-family: 'Inter', sans-serif;
-            white-space: nowrap;
-            min-width: 36px;
-        }
-        .action-btn:hover {
-            background: rgba(2, 132, 199, 0.08);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(2, 132, 199, 0.1);
-        }
-        .action-btn svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-            display: block;
-        }
-        .action-btn .btn-text {
-            display: none;
-        }
+        tr:hover td { background: #f1f5f9; }
+        
+        .bold-text { font-weight: 600; color: #0f172a; }
+        .sub-text { font-size: 0.65rem; color: #94a3b8; display: block; margin-top: 2px;}
 
-        /* ===== Вкладка "Таблица" (мониторинг) ===== */
-        #fullTable {
-            padding: 0;
-            margin: 0;
+        /* ===== Спец. стили для ТО ПУРГ (Умная подсветка) ===== */
+        .badge-error {
+            background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 0.75rem;
+            cursor: pointer; display: inline-block; transition: 0.2s; border: 1px solid #fecaca;
         }
-        #fullTable .table-container {
-            border-radius: var(--radius);
-            background: var(--bg-secondary);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-glow);
-            backdrop-filter: none;
+        .badge-error:hover { background: #fecaca; transform: translateY(-1px); box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2); }
+        
+        .text-normal { color: var(--text-primary); font-size: 0.8rem; }
+        
+        .text-comment {
+            color: var(--accent-cyan); cursor: pointer; text-decoration: underline; 
+            text-decoration-style: dotted; text-underline-offset: 3px; font-weight: 500; font-size: 0.8rem;
         }
-        #fullTable .table-toolbar {
-            display: flex;
-            justify-content: flex-end;
-            align-items: center;
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            background: #f8fafc;
+        .text-comment:hover { color: var(--accent-blue); }
+
+        .action-btn {
+            background: #f8fafc; border: 1px solid rgba(0,0,0,0.08); color: var(--text-secondary);
+            padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.25s;
         }
-        #fullTable .table-toolbar .export-btn {
-            background: rgba(2, 132, 199, 0.08);
-            border: 1px solid var(--accent-cyan);
-            color: var(--accent-cyan);
-            padding: 6px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.8rem;
-            font-weight: 500;
-            transition: all 0.25s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        #fullTable .table-toolbar .export-btn:hover {
-            background: rgba(2, 132, 199, 0.15);
-            box-shadow: 0 0 20px rgba(2, 132, 199, 0.15);
-        }
-        #fullTable .table-responsive {
-            background: var(--bg-secondary);
-            border-radius: 0 0 var(--radius) var(--radius);
-            overflow-x: auto;
-        }
-        #fullTable table {
-            font-family: Arial, sans-serif;
-            font-size: 0.75rem;
-            color: var(--text-primary);
-            background: var(--bg-secondary);
-            border-collapse: collapse;
-            width: 100%;
-            table-layout: auto;
-        }
-        #fullTable table th,
-        #fullTable table td {
-            padding: 6px 8px;
-            border: none;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-            white-space: nowrap;
-            text-align: left;
-            vertical-align: middle;
-        }
-        #fullTable table th {
-            background: #f1f5f9;
-            color: #1e293b;
-            font-weight: 600;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            border-bottom: 2px solid #cbd5e1;
-            padding: 8px 8px;
-        }
-        #fullTable table td {
-            color: #334155;
-            font-weight: 400;
-        }
-        #fullTable table tr:hover td {
-            background: #f1f5f9;
-        }
+        .action-btn:hover { background: rgba(2, 132, 199, 0.08); border-color: var(--accent-cyan); color: var(--accent-cyan); }
+        .action-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
         /* ===== Модальное окно ===== */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            z-index: 2000; justify-content: center; align-items: center; padding: 20px;
         }
-        .modal-overlay.active {
-            display: flex;
-        }
+        .modal-overlay.active { display: flex; }
         .modal {
-            background: var(--bg-secondary);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: var(--radius);
-            max-width: 720px;
-            width: 100%;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1), 0 0 60px rgba(2, 132, 199, 0.05);
-            animation: modalFade 0.25s ease;
+            background: var(--bg-secondary); border-radius: var(--radius); max-width: 700px; width: 100%;
+            max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            animation: modalFade 0.2s ease;
         }
-        @keyframes modalFade {
-            from { opacity: 0; transform: scale(0.96) translateY(20px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 24px;
-            border-bottom: 1px solid rgba(0,0,0,0.06);
-        }
-        .modal-header h3 {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: var(--text-primary);
-            letter-spacing: 0.02em;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.6rem;
-            cursor: pointer;
-            transition: color 0.2s;
-            line-height: 1;
-            padding: 0 4px;
-        }
-        .modal-close:hover {
-            color: var(--text-primary);
-        }
-        .modal-body {
-            padding: 20px 24px;
-            overflow-y: auto;
-            flex: 1;
-        }
-        .modal-body .empty-state {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 30px 0;
-        }
-        .day-group {
-            margin-bottom: 20px;
-        }
-        .day-group .day-title {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 500;
-            font-size: 0.75rem;
-            letter-spacing: 0.04em;
-            color: var(--accent-cyan);
-            background: rgba(2, 132, 199, 0.06);
-            padding: 4px 14px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-bottom: 10px;
-            border: 1px solid rgba(2, 132, 199, 0.08);
-        }
-        .record-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            border-radius: 8px;
-            background: #f8fafc;
-            margin-bottom: 4px;
-            border-left: 2px solid rgba(2, 132, 199, 0.3);
-        }
-        .record-item .record-main {
-            display: flex;
-            flex-direction: column;
-        }
-        .record-item .record-main .model {
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        .record-item .record-main .serial {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        .record-item .record-meta {
-            text-align: right;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-        }
-        .record-item .record-meta .time {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--text-primary);
-            letter-spacing: 0.02em;
-        }
-        .record-item .record-meta .object-name {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-        .modal-footer {
-            padding: 12px 24px 18px;
-            border-top: 1px solid rgba(0,0,0,0.06);
-            display: flex;
-            justify-content: flex-end;
-        }
-        .modal-footer .btn-close {
-            background: #f1f5f9;
-            border: 1px solid rgba(0,0,0,0.08);
-            padding: 8px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            font-family: 'Inter', sans-serif;
-        }
-        .modal-footer .btn-close:hover {
-            background: #e2e8f0;
-            color: var(--text-primary);
-        }
+        @keyframes modalFade { from { opacity: 0; transform: scale(0.98) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+        .modal-header h3 { font-family: 'Orbitron', sans-serif; font-weight: 600; font-size: 1.1rem; }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.8rem; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: var(--text-primary); }
+        .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+        .empty-state { text-align: center; color: var(--text-muted); padding: 30px 0; }
+        
+        .detail-box { padding: 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.6; white-space: pre-line; }
+        .detail-box.err { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
+        .detail-box.neutral { background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; }
 
-        /* ===== Адаптив для телефонов ===== */
+        .day-group { margin-bottom: 20px; }
+        .day-title { font-family: 'Orbitron', sans-serif; font-weight: 500; font-size: 0.75rem; color: var(--accent-cyan); background: rgba(2, 132, 199, 0.06); padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(2, 132, 199, 0.08); }
+        
+        /* Детальные карточки ПУРГ */
+        .report-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .report-card.has-error { border-left: 4px solid #ef4444; }
+        .report-card:not(.has-error) { border-left: 4px solid #10b981; }
+        .rc-header { display: flex; justify-content: space-between; align-items:flex-start; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+        .rc-title { font-weight: 700; color: #0f172a; font-size: 1rem; }
+        .rc-subtitle { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+        .rc-meta { text-align: right; flex-shrink:0; margin-left: 10px;}
+        .rc-time { font-weight: 600; font-size: 0.85rem; color: #1e293b; }
+        .rc-installer { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+        .rc-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+        .rc-section { font-size: 0.85rem; color: #334155; line-height: 1.5; }
+        .rc-section strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+        .rc-errors strong { color: #ef4444; }
+        .rc-works strong { color: #10b981; }
+        
+        .record-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 8px; background: #f8fafc; margin-bottom: 6px; border-left: 3px solid rgba(2, 132, 199, 0.3); }
+        .record-item.error-border { border-left-color: var(--accent-pink); background: #fdf2f8;}
+        .record-main { display: flex; flex-direction: column; }
+        .record-main .model { font-weight: 600; color: var(--text-primary); font-size: 0.9rem;}
+        .record-main .serial { font-size: 0.75rem; color: var(--text-muted); margin-top:2px;}
+        .record-meta { text-align: right; }
+        .record-meta .time { font-weight: 700; font-size: 0.9rem; }
+
+        /* ===== Адаптив ===== */
         @media (max-width: 768px) {
             body { padding: 12px; }
-            .header { flex-direction: column; align-items: stretch; gap: 10px; padding: 16px; }
-            .logo { text-align: center; font-size: 1.3rem; }
+            .header { flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
+            .logo { justify-content: center; }
             .status { justify-content: center; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .stat-card .number { font-size: 1.6rem; }
-            .modal { max-width: 100%; margin: 10px; }
-            nav { justify-content: center; gap: 12px; }
-            nav .tab-btn { font-size: 0.85rem; }
-            #fullTable table { font-size: 0.6rem; }
-            #fullTable table th,
-            #fullTable table td { padding: 4px 6px; }
-            .model-item { font-size: 0.75rem; max-width: 150px; }
-            .model-item .model-name { max-width: 90px; }
-            .stat-card .label { font-size: 0.7rem; }
-            .stat-card .sub { font-size: 0.6rem; }
-            table { font-size: 0.7rem; }
-            th, td { padding: 8px 10px; }
-            .installer-name { max-width: 100px; }
-            .action-btn { padding: 4px 8px; }
-            .action-btn svg { width: 16px; height: 16px; }
-        }
-        @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-            .stat-card { padding: 14px 10px; }
-            .stat-card .number { font-size: 1.4rem; }
-            .model-item { font-size: 0.7rem; max-width: 120px; }
-            .model-item .model-name { max-width: 70px; }
-            table { font-size: 0.65rem; }
-            th, td { padding: 6px 8px; }
-            .installer-name { max-width: 80px; }
-        }
-
-        .stat-card {
-            opacity: 0;
-            transform: translateY(20px);
-            animation: cardAppear 0.5s ease forwards;
-        }
-        .stat-card:nth-child(1) { animation-delay: 0.05s; }
-        .stat-card:nth-child(2) { animation-delay: 0.1s; }
-        .stat-card:nth-child(3) { animation-delay: 0.15s; }
-        .stat-card:nth-child(4) { animation-delay: 0.2s; }
-
-        @keyframes cardAppear {
-            to { opacity: 1; transform: translateY(0); }
+            .table-toolbar { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: 100%; }
+            th, td { padding: 8px 10px; font-size: 0.75rem; }
+            .main-nav { justify-content: center; }
         }
     </style>
 </head>
@@ -666,71 +292,138 @@
 
     <div class="app-wrapper">
         <header class="header">
-            <div class="logo">✦ СМТ Мониторинг</div>
+            <div class="logo">✦ МОНИТОРИНГ</div>
             <div class="status">
                 <span class="dot" id="connDot"></span>
                 <span id="connText">Подключение…</span>
             </div>
-            <nav>
-                <button class="tab-btn active" data-target="summary">Сводка</button>
-                <button class="tab-btn" data-target="fullTable">Таблица</button>
+            <!-- ГЛАВНАЯ НАВИГАЦИЯ -->
+            <nav class="main-nav">
+                <button class="main-tab-btn active" data-target="smtContainer">СМТ</button>
+                <button class="main-tab-btn" data-target="purgContainer">ТО ПУРГ</button>
             </nav>
         </header>
 
-        <div id="summary" class="tab-content active">
-            <div class="stats-grid" id="statsGrid"></div>
+        <!-- ================= БЛОК СМТ ================= -->
+        <div id="smtContainer" class="main-tab-content active">
+            <div class="sub-nav-container">
+                <div class="sub-nav">
+                    <button class="sub-tab-btn active" data-target="smtSummary">Сводка</button>
+                    <button class="sub-tab-btn" data-target="smtFullTable">Таблица</button>
+                </div>
+            </div>
 
-            <div class="table-container">
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Имя</th>
-                                <th style="text-align:center;">Устан.</th>
-                                <th style="text-align:right;">Детально</th>
-                            </tr>
-                        </thead>
-                        <tbody id="summaryTableBody"></tbody>
-                    </table>
+            <!-- СМТ Сводка -->
+            <div id="smtSummary" class="sub-tab-content active">
+                <div class="stats-grid" id="smtStatsGrid"></div>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Имя монтажника</th>
+                                    <th style="text-align:center;">Установки</th>
+                                    <th style="text-align:right;">Детально</th>
+                                </tr>
+                            </thead>
+                            <tbody id="smtSummaryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- СМТ Таблица -->
+            <div id="smtFullTable" class="sub-tab-content">
+                <div class="table-container">
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <input type="text" id="smtSearch" placeholder="Поиск по СМТ...">
+                        </div>
+                        <button class="export-btn" onclick="exportSmtToExcel()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                            Выгрузить в XLSX
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Монтажник</th><th>Объект</th><th>Адрес</th><th>Расположение</th>
+                                    <th>Мощн.</th><th>Модель</th><th>№</th><th>Пломба</th>
+                                    <th>Ст. модель</th><th>Ст. №</th><th>Ст. показ.</th><th>Направл.</th>
+                                    <th>SIM</th><th>Дата</th>
+                                </tr>
+                            </thead>
+                            <tbody id="smtFullTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="fullTable" class="tab-content">
-            <div class="table-container">
-                <div class="table-toolbar">
-                    <button class="export-btn" onclick="exportToExcel()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                        Выгрузить в XLS
-                    </button>
+        <!-- ================= БЛОК ТО ПУРГ ================= -->
+        <div id="purgContainer" class="main-tab-content">
+            <div class="sub-nav-container">
+                <div class="sub-nav">
+                    <button class="sub-tab-btn active" data-target="purgSummary">Сводка</button>
+                    <button class="sub-tab-btn" data-target="purgFullTable">Таблица</button>
                 </div>
-                <div class="table-responsive">
-                    <table id="dataTable">
-                        <thead>
-                            <tr>
-                                <th>Монтажник</th>
-                                <th>Объект</th>
-                                <th>Адрес</th>
-                                <th>Расположение</th>
-                                <th>Мощн. (м³/ч)</th>
-                                <th>Модель</th>
-                                <th>№</th>
-                                <th>Пломба</th>
-                                <th>Ст. модель</th>
-                                <th>Ст. №</th>
-                                <th>Ст. показ.</th>
-                                <th>Направл.</th>
-                                <th>SIM</th>
-                                <th>Дата</th>
-                            </tr>
-                        </thead>
-                        <tbody id="fullTableBody"></tbody>
-                    </table>
+            </div>
+
+            <!-- ПУРГ Сводка -->
+            <div id="purgSummary" class="sub-tab-content active">
+                <div class="stats-grid" id="purgStatsGrid"></div>
+                <div class="table-container">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Имя исполнителя</th>
+                                    <th style="text-align:center;">ТО (шт.)</th>
+                                    <th style="text-align:right;">Детально</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purgSummaryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ПУРГ Таблица -->
+            <div id="purgFullTable" class="sub-tab-content">
+                <div class="table-container">
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <input type="text" id="purgSearch" placeholder="Поиск по ПУРГ...">
+                        </div>
+                        <button class="export-btn" onclick="exportPurgToExcel()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                            Выгрузить в XLSX
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Монтажник</th><th>ПУРГ</th><th>Адрес / GPS</th><th>Дата</th>
+                                    <th>3. Замки</th><th>4. Трава</th><th>5. Утечка (до)</th><th>6. Освещ.</th>
+                                    <th>8. Мусор</th><th>9. Краны</th><th>10. Давл.</th><th>11. Фильтр</th>
+                                    <th>12. Ветки</th><th>13. Счетчики</th><th>14. Архивы</th><th>15. Заземл.</th>
+                                    <th>16. Утечка (посл.)</th><th>17. Примечания</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purgFullTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+
     </div>
 
+    <!-- Модальное Окно -->
     <div class="modal-overlay" id="detailsModal">
         <div class="modal">
             <div class="modal-header">
@@ -740,494 +433,487 @@
             <div class="modal-body" id="detailsBody">
                 <div class="empty-state">Загрузка…</div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-close" onclick="closeModal('detailsModal')">Закрыть</button>
-            </div>
         </div>
     </div>
 
     <script>
-        // ============================================================
-        // 1. СВЕТЛЫЙ ФОН ЧАСТИЦ
-        // ============================================================
+        // ================= 1. АНИМАЦИЯ ФОНА =================
         (function initStars() {
             const canvas = document.getElementById('stars-canvas');
             const ctx = canvas.getContext('2d');
-            let W, H;
-            const stars = [];
-            const NUM_STARS = 120; // Немного убавил для чистоты светлого фона
-            const MAX_SPEED = 0.4;
-
-            function resize() {
-                W = canvas.width = window.innerWidth;
-                H = canvas.height = window.innerHeight;
+            let W, H; const stars = [];
+            function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+            window.addEventListener('resize', resize); resize();
+            for (let i = 0; i < 100; i++) {
+                stars.push({ x: Math.random() * W, y: Math.random() * H, r: Math.random() * 1.5 + 0.5, speed: Math.random() * 0.3 + 0.1, opacity: Math.random() * 0.4 + 0.1 });
             }
-            window.addEventListener('resize', resize);
-            resize();
-
-            for (let i = 0; i < NUM_STARS; i++) {
-                stars.push({
-                    x: Math.random() * W,
-                    y: Math.random() * H,
-                    r: Math.random() * 1.5 + 0.5,
-                    speed: Math.random() * MAX_SPEED + 0.1,
-                    opacity: Math.random() * 0.4 + 0.1, // Более прозрачные для светлого фона
-                });
-            }
-
             function draw() {
                 ctx.clearRect(0, 0, W, H);
                 for (const s of stars) {
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-                    ctx.fillStyle = `rgba(37, 99, 235, ${s.opacity})`; // Сделал частицы мягко-синими
-                    ctx.fill();
-                    s.opacity += (Math.random() - 0.5) * 0.01;
-                    s.opacity = Math.min(0.5, Math.max(0.1, s.opacity));
-                    s.y += s.speed * 0.3;
-                    if (s.y > H) {
-                        s.y = 0;
-                        s.x = Math.random() * W;
-                    }
+                    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(37, 99, 235, ${s.opacity})`; ctx.fill();
+                    s.opacity += (Math.random() - 0.5) * 0.01; s.opacity = Math.min(0.5, Math.max(0.1, s.opacity));
+                    s.y += s.speed * 0.3; if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
                 }
                 requestAnimationFrame(draw);
             }
             draw();
         })();
 
-        // ============================================================
-        // 2. FIREBASE + ЛОГИКА
-        // ============================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak",
-            authDomain: "botstm100.firebaseapp.com",
-            databaseURL: "https://botstm100-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "botstm100",
-            storageBucket: "botstm100.firebasestorage.app",
-            messagingSenderId: "462080340216",
-            appId: "1:462080340216:web:c452983a1501f0bf170b0d"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref('bot_installations');
-
-        let dbList = [];
-
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
-        function openModal(id) {
-            document.getElementById(id).classList.add('active');
-        }
-
-        document.querySelectorAll('.modal-overlay').forEach(el => {
-            el.addEventListener('click', (e) => {
-                if (e.target === el) closeModal(el.id);
+        // ================= 2. УПРАВЛЕНИЕ ВКЛАДКАМИ =================
+        document.querySelectorAll('.main-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(this.dataset.target).classList.add('active');
             });
         });
 
-        function parseDateFromString(str) {
-            if (!str) return null;
-            const parts = str.split(',');
-            if (parts.length < 2) return null;
-            const datePart = parts[0].trim().split('.');
-            const timePart = parts[1].trim().split(':');
-            if (datePart.length !== 3 || timePart.length !== 2) return null;
-            const day = parseInt(datePart[0]);
-            const month = parseInt(datePart[1]) - 1;
-            const year = parseInt(datePart[2]);
-            const hour = parseInt(timePart[0]);
-            const minute = parseInt(timePart[1]);
-            return new Date(year, month, day, hour, minute);
-        }
-
-        function extractMeterSize(model) {
-            if (!model) return '—';
-            const match = model.match(/G(\d{1,2})/i);
-            if (match) {
-                return 'G' + match[1];
-            }
-            return model.substring(0, 10);
-        }
-
-        function renderStats() {
-            const grid = document.getElementById('statsGrid');
-            const totalFiltered = dbList.length;
-
-            const now = new Date();
-            const todayStart = new Date(now);
-            todayStart.setHours(7, 0, 0, 0);
-            const todayEnd = new Date(now);
-            todayEnd.setHours(23, 59, 59, 999);
-            let todayCount = 0;
-            dbList.forEach(item => {
-                const d = parseDateFromString(item.date);
-                if (d && d >= todayStart && d <= todayEnd) todayCount++;
+        document.querySelectorAll('.sub-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const parent = this.closest('.main-tab-content');
+                parent.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                parent.querySelectorAll('.sub-tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(this.dataset.target).classList.add('active');
             });
+        });
 
-            let totalPower = 0;
-            dbList.forEach(item => {
-                if (item.totalPower) {
-                    const val = parseFloat(item.totalPower.replace(',', '.'));
-                    if (!isNaN(val)) totalPower += val;
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        document.querySelectorAll('.modal-overlay').forEach(el => { el.addEventListener('click', (e) => { if (e.target === el) closeModal(el.id); }); });
+
+        // Утилиты дат
+        function parseDate(str) {
+            if (!str) return null;
+            const p = str.split(','); if (p.length < 2) return null;
+            const d = p[0].trim().split('.'); const t = p[1].trim().split(':');
+            return new Date(d[2], d[1]-1, d[0], t[0], t[1]);
+        }
+        function isToday(dateObj) {
+            if (!dateObj) return false;
+            const now = new Date(); const todayStart = new Date(now); todayStart.setHours(7, 0, 0, 0);
+            return dateObj >= todayStart;
+        }
+
+        // ================= 3. FIREBASE ИНИЦИАЛИЗАЦИЯ =================
+        // База СМТ
+        const configSMT = {
+            apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak", authDomain: "botstm100.firebaseapp.com",
+            databaseURL: "https://botstm100-default-rtdb.europe-west1.firebasedatabase.app", projectId: "botstm100"
+        };
+        const appSMT = firebase.initializeApp(configSMT, "appSMT");
+        const dbSMT = appSMT.database(); const refSMT = dbSMT.ref('bot_installations');
+
+        // База ПУРГ
+        const configPURG = {
+            apiKey: "AIzaSyBvo10dq0VkZeBaP-Cv3GVIJfEW23QzKIk", authDomain: "smt-sklad-8f993.firebaseapp.com",
+            databaseURL: "https://smt-sklad-8f993-default-rtdb.europe-west1.firebasedatabase.app", projectId: "smt-sklad-8f993"
+        };
+        const appPURG = firebase.initializeApp(configPURG, "appPURG");
+        const dbPURG = appPURG.database(); const refPURG = dbPURG.ref('purg_reports');
+
+        let smtList = []; let purgList = [];
+        let smtSearchQuery = ''; let purgSearchQuery = '';
+
+        // Поиск
+        document.getElementById('smtSearch').addEventListener('input', e => { smtSearchQuery = e.target.value.toLowerCase(); renderSmtTable(); });
+        document.getElementById('purgSearch').addEventListener('input', e => { purgSearchQuery = e.target.value.toLowerCase(); renderPurgTable(); });
+
+        // Статус сети
+        dbSMT.ref('.info/connected').on('value', snap => {
+            const dot = document.getElementById('connDot'); const txt = document.getElementById('connText');
+            if (snap.val() === true) { dot.classList.add('online'); txt.innerText = 'В сети'; txt.style.color = 'var(--accent-cyan)'; }
+            else { dot.classList.remove('online'); txt.innerText = 'Офлайн'; txt.style.color = 'var(--text-muted)'; }
+        });
+
+        // ================= 4. ЛОГИКА СМТ =================
+        refSMT.on('value', snap => {
+            const data = snap.val(); smtList = [];
+            if (data) for (let key in data) smtList.push({ id: key, ...data[key] });
+            smtList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+            renderSmtStats(); renderSmtSummary(); renderSmtTable();
+        });
+
+        function renderSmtStats() {
+            let todayCount = 0; let totalPower = 0; const sizeCount = {};
+            smtList.forEach(item => {
+                if (isToday(parseDate(item.date))) todayCount++;
+                if (item.totalPower) totalPower += parseFloat(item.totalPower.replace(',', '.')) || 0;
+                if (item.model) {
+                    const match = item.model.match(/G(\d{1,2})/i);
+                    const size = match ? 'G' + match[1] : item.model.substring(0, 10);
+                    if (size !== '—') sizeCount[size] = (sizeCount[size] || 0) + 1;
                 }
             });
 
-            const sizeCount = {};
-            dbList.forEach(item => {
-                if (item.model) {
-                    const size = extractMeterSize(item.model);
-                    if (size && size !== '—') {
-                        sizeCount[size] = (sizeCount[size] || 0) + 1;
+            const sortedSizes = Object.entries(sizeCount).sort((a, b) => parseInt(a[0].replace('G', '')) - parseInt(b[0].replace('G', '')));
+            let sizesHtml = sortedSizes.length ? '<div class="model-list">' + sortedSizes.map(s => `<div class="model-item"><span class="model-name">${s[0]}</span><span class="model-count">${s[1]}</span></div>`).join('') + '</div>' : '<div style="color:var(--text-muted); font-size:0.8rem;">Нет данных</div>';
+
+            document.getElementById('smtStatsGrid').innerHTML = `
+                <div class="stat-card accent-cyan"><div class="icon">📊</div><div class="number">${smtList.length}</div><div class="label">Всего установок</div></div>
+                <div class="stat-card accent-green clickable" onclick="showSmtToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня (с 7:00)</div></div>
+                <div class="stat-card accent-pink"><div class="icon">⚡</div><div class="number">${totalPower.toFixed(1)}</div><div class="label">Суммарная мощность</div></div>
+                <div class="stat-card accent-purple"><div class="label" style="font-weight:600;margin-bottom:6px;">Типоразмеры</div>${sizesHtml}</div>
+            `;
+        }
+
+        function renderSmtSummary() {
+            const stats = {};
+            smtList.forEach(item => { const inst = item.installer || 'Неизвестно'; stats[inst] = (stats[inst] || 0) + 1; });
+            const html = Object.keys(stats).sort().map(inst => `
+                <tr>
+                    <td><span class="installer-name">${inst}</span></td>
+                    <td style="text-align:center;"><span class="bold-text">${stats[inst]}</span></td>
+                    <td style="text-align:right;"><button class="action-btn" onclick="showSmtInstaller('${inst}')">Детали</button></td>
+                </tr>
+            `).join('');
+            document.getElementById('smtSummaryTableBody').innerHTML = html || `<tr><td colspan="3" style="text-align:center;">Нет данных</td></tr>`;
+        }
+
+        function renderSmtTable() {
+            const filtered = smtList.filter(i => {
+                const s = `${i.installer} ${i.objectName} ${i.address} ${i.model} ${i.serial}`.toLowerCase();
+                return s.includes(smtSearchQuery);
+            });
+            const html = filtered.map(item => `
+                <tr>
+                    <td class="bold-text">${item.installer || '-'}</td>
+                    <td class="bold-text">${item.objectName || '-'}</td>
+                    <td>${item.address || '-'}</td>
+                    <td>${item.uirgLocation || '-'}</td>
+                    <td>${item.totalPower || '-'}</td>
+                    <td>${item.model || '-'}</td>
+                    <td>${item.serial || '-'}</td>
+                    <td>${item.controllerSeal || '-'}</td>
+                    <td>${item.oldMeterModel || '-'}</td>
+                    <td>${item.oldMeterSerial || '-'}</td>
+                    <td>${item.oldMeterReadings || '-'}</td>
+                    <td>${item.newGasDirection || '-'}</td>
+                    <td>${item.simCardNumber || '-'}</td>
+                    <td>${item.date || '-'}</td>
+                </tr>
+            `).join('');
+            document.getElementById('smtFullTableBody').innerHTML = html || `<tr><td colspan="14" style="text-align:center;">Ничего не найдено</td></tr>`;
+        }
+
+        function exportSmtToExcel() {
+            if (!smtList.length) return;
+            const hdrs = ['Монтажник', 'Объект', 'Адрес', 'Расположение', 'Мощн.', 'Модель', '№', 'Пломба', 'Ст. модель', 'Ст. №', 'Ст. показ.', 'Направл.', 'SIM', 'Дата'];
+            const data = [hdrs];
+            smtList.forEach(item => {
+                data.push([item.installer, item.objectName, item.address, item.uirgLocation, item.totalPower, item.model, item.serial, item.controllerSeal, item.oldMeterModel, item.oldMeterSerial, item.oldMeterReadings, item.newGasDirection, item.simCardNumber, item.date]);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "СМТ");
+            XLSX.writeFile(wb, `СМТ_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        // Модалки СМТ
+        function buildSmtModalList(records, title) {
+            const byDay = {};
+            records.forEach(r => { const d = r.date ? r.date.split(',')[0] : 'Без даты'; if (!byDay[d]) byDay[d] = []; byDay[d].push(r); });
+            let html = '';
+            Object.keys(byDay).sort((a,b) => parseDate(b+',00:00') - parseDate(a+',00:00')).forEach(day => {
+                html += `<div class="day-group"><div class="day-title">${day} (${byDay[day].length} шт.)</div>`;
+                byDay[day].forEach(r => {
+                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
+                    html += `<div class="record-item"><div class="record-main"><span class="model">${r.model||'—'} (№${r.serial||'—'})</span><span class="serial">${r.installer||'—'}</span></div><div class="record-meta"><div class="time">${time}</div><div style="font-size:0.75rem;color:#64748b;">${r.objectName||''}</div></div></div>`;
+                });
+                html += `</div>`;
+            });
+            document.getElementById('detailsTitle').innerText = title;
+            document.getElementById('detailsBody').innerHTML = html || '<div class="empty-state">Нет данных</div>';
+            openModal('detailsModal');
+        }
+        function showSmtToday() { buildSmtModalList(smtList.filter(i => isToday(parseDate(i.date))), `Установлено сегодня`); }
+        function showSmtInstaller(inst) { buildSmtModalList(smtList.filter(i => i.installer === inst), `СМТ: ${inst}`); }
+
+        // ================= 5. ЛОГИКА ТО ПУРГ (Детальная аналитика) =================
+        refPURG.on('value', snap => {
+            const data = snap.val(); purgList = [];
+            if (data) for (let key in data) purgList.push({ id: key, ...data[key] });
+            purgList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+            renderPurgStats(); renderPurgSummary(); renderPurgTable();
+        });
+
+        // Надежный поиск ошибок в ручном тексте
+        function isCommentError(text) {
+            if (!text) return false;
+            let cleanT = text.toLowerCase().replace(/(нет|отсутствует)\s*(утечек|утечки|проблем|повреждений)/g, '');
+            cleanT = cleanT.replace(/(всё|все)\s*(исправно|в норме)/g, '');
+            const errWords = ['неисправ', 'сломан', 'поврежд', 'дефект', 'ошибк', 'не работ', 'не крут', 'заклинил', 'сорван', 'грязн', 'загрязн', 'порван', 'разбит', 'трещин', 'проблем', 'утечк', 'нет замка', 'нет освещ', 'нет электр', 'отсутству', 'плох', 'запах', 'шумит', 'свистит', 'пропускает', 'не открыва', 'перелез', 'заржаве', 'ржав', 'заеда', 'нет забора', 'калитки', 'мусор', 'ветки'];
+            return errWords.some(w => cleanT.includes(w));
+        }
+
+        // Парсер ТО ПУРГ
+        function getPurgColumns(item) {
+            const s = item.selections || {}; const c = item.comments || {}; const ch = item.checkboxes || {};
+            
+            // "заземление сделал" / "Сделал заземление" теперь учитывается как ошибка
+            const errOptions = [
+                "Обнаружена утечка", "Неисправно", "Загрязнен", "Неисправен", "Неисправность", 
+                "Архив не скачан", "заземления нет", "Нет заземления", "Утечка есть", "Замки неисправны",
+                "заземление сделал", "Сделал заземление"
+            ];
+            
+            let errorLogs = [];
+            let workLogs = [];
+
+            // Функция получения статуса колонки и одновременно сбора логов для красивой сводки
+            function getStat(prefix, type, map, title, pIndex, workName) {
+                let fullVal = "—", short = "—", isErr = false, details = "";
+                
+                if (type === 'checkbox') {
+                    fullVal = ch[prefix] ? "Выполнено" : "—"; short = fullVal;
+                    if (ch[prefix] && workName) workLogs.push(`П${pIndex}: ${workName}`);
+                } 
+                else if (type === 'options') {
+                    if (s[prefix]) {
+                        fullVal = s[prefix];
+                        if (errOptions.includes(fullVal)) isErr = true;
+                        short = map[fullVal] || fullVal;
+                        if (c[prefix] && c[prefix].trim() !== '') details = c[prefix];
+
+                        if (workName && (
+                            fullVal === "Уборка выполнена" || fullVal.includes("Переключил на ветку") ||
+                            fullVal === "Архивы скачаны" || fullVal === "заземление сделал" || 
+                            fullVal === "Сделал заземление" || fullVal === "Утечка устранена"
+                        )) {
+                            workLogs.push(`П${pIndex}: ${workName}`);
+                        }
+                    }
+                    else if (c[prefix] && c[prefix].trim() !== '') {
+                        fullVal = c[prefix];
+                        if (isCommentError(fullVal)) { isErr = true; short = "ОШИБКА"; } else { short = "Коммент."; }
+                        details = fullVal;
+                    }
+                } 
+                else if (type === 'comment') {
+                    fullVal = c[prefix] || "—";
+                    if (fullVal !== "—" && fullVal.trim() !== "") {
+                        if (isCommentError(fullVal)) { isErr = true; short = "ОШИБКА"; } else { short = "Коммент."; }
+                        details = fullVal;
                     }
                 }
-            });
-            const sortedSizes = Object.entries(sizeCount).sort((a, b) => {
-                const numA = parseInt(a[0].replace('G', ''));
-                const numB = parseInt(b[0].replace('G', ''));
-                return numA - numB;
-            });
 
-            let sizesHtml = '';
-            if (sortedSizes.length === 0) {
-                sizesHtml = '<div style="color:var(--text-muted); font-size:0.85rem;">Нет данных</div>';
-            } else {
-                sizesHtml = '<div class="model-list">';
-                sortedSizes.forEach(([size, count]) => {
-                    sizesHtml += `
-                        <div class="model-item">
-                            <span class="model-name" title="${size}">${size}</span>
-                            <span class="model-count">${count}</span>
-                        </div>
-                    `;
-                });
-                sizesHtml += '</div>';
+                // Логирование ОШИБОК для детального отчета
+                if (isErr) {
+                    let errText = (details && details.trim() !== '') ? details : fullVal;
+                    if (errText === "—") errText = "Неисправность";
+                    
+                    // Понятные описания для нестандартных ошибок (чтобы в логах было красиво)
+                    if (errText === "заземление сделал" || errText === "Сделал заземление") {
+                        errorLogs.push(`П${pIndex}: Отсутствовало заземление (исправлено)`);
+                    } else if (errText === "Утечка устранена") {
+                        errorLogs.push(`П${pIndex}: Была утечка (устранена)`);
+                    } else {
+                        errorLogs.push(`П${pIndex}: ${errText}`);
+                    }
+                }
+
+                let excelText = fullVal;
+                if (details && type === 'options' && s[prefix]) excelText += ` (${details})`;
+                else if (details && (!s[prefix] || type === 'comment')) excelText = details;
+
+                return { err: isErr, text: short, fullVal, details, excelText, title };
             }
 
-            grid.innerHTML = `
-                <div class="stat-card accent-cyan">
-                    <div class="icon">📊</div>
-                    <div class="number">${totalFiltered}</div>
-                    <div class="label">Всего установок</div>
-                    <div class="sub">в базе</div>
-                </div>
-                <div class="stat-card accent-green clickable" onclick="showTodayDetails()" title="Нажмите для деталей">
-                    <div class="icon">📅</div>
-                    <div class="number">${todayCount}</div>
-                    <div class="label">Сегодня (с 7:00)</div>
-                    <div class="sub">за день</div>
-                </div>
-                <div class="stat-card accent-pink">
-                    <div class="icon">⚡</div>
-                    <div class="number">${totalPower.toFixed(1)}</div>
-                    <div class="label">Суммарная мощность</div>
-                    <div class="sub">м³/ч</div>
-                </div>
-                <div class="stat-card accent-purple" style="grid-column: span 1;">
-                    <div class="icon">📦</div>
-                    <div class="label" style="font-weight:600; margin-bottom:4px;">Типоразмеры</div>
-                    ${sizesHtml}
-                </div>
-            `;
-        }
-
-        function showTodayDetails() {
-            const now = new Date();
-            const todayStart = new Date(now);
-            todayStart.setHours(7, 0, 0, 0);
-            const todayEnd = new Date(now);
-            todayEnd.setHours(23, 59, 59, 999);
-
-            const todayRecords = dbList.filter(item => {
-                const d = parseDateFromString(item.date);
-                return d && d >= todayStart && d <= todayEnd;
-            });
-
-            if (todayRecords.length === 0) {
-                document.getElementById('detailsTitle').innerText = 'Сегодня (с 7:00)';
-                document.getElementById('detailsBody').innerHTML = `<div class="empty-state">За сегодня установок нет</div>`;
-                openModal('detailsModal');
-                return;
-            }
-
-            const byInstaller = {};
-            todayRecords.forEach(r => {
-                const inst = r.installer || 'Неизвестно';
-                if (!byInstaller[inst]) byInstaller[inst] = [];
-                byInstaller[inst].push(r);
-            });
-
-            let html = '';
-            Object.keys(byInstaller).sort().forEach(inst => {
-                html += `<div class="day-group">
-                    <div class="day-title">${inst} (${byInstaller[inst].length} шт.)</div>
-                `;
-                byInstaller[inst].forEach(r => {
-                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
-                    html += `
-                        <div class="record-item">
-                            <div class="record-main">
-                                <span class="model">${r.model || '—'}</span>
-                                <span class="serial">№ ${r.serial || '—'}</span>
-                            </div>
-                            <div class="record-meta">
-                                <div class="time">${time}</div>
-                                <div class="object-name">${r.objectName || ''}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            });
-
-            document.getElementById('detailsTitle').innerText = `Сегодня установлено: ${todayRecords.length}`;
-            document.getElementById('detailsBody').innerHTML = html;
-            openModal('detailsModal');
-        }
-
-        function renderSummary() {
-            const tbody = document.getElementById('summaryTableBody');
-            const stats = {};
-            dbList.forEach(item => {
-                const installer = item.installer || 'Неизвестно';
-                if (!stats[installer]) stats[installer] = { count: 0, records: [] };
-                stats[installer].count++;
-                stats[installer].records.push(item);
-            });
-
-            let html = '';
-            const sortedInstallers = Object.keys(stats).sort();
-            if (sortedInstallers.length === 0) {
-                html = `<tr><td colspan="3" style="text-align:center; padding:24px; color:var(--text-muted);">Нет данных</td></tr>`;
-            } else {
-                sortedInstallers.forEach(inst => {
-                    const count = stats[inst].count;
-                    html += `
-                        <tr>
-                            <td><span class="installer-name" title="${inst}">${inst}</span></td>
-                            <td style="text-align:center;"><span class="count-badge">${count}</span></td>
-                            <td style="text-align:right;">
-                                <button class="action-btn" onclick="showInstallerDetails('${inst}')" title="Детализация">
-                                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
-            tbody.innerHTML = html;
-        }
-
-        function showInstallerDetails(installer) {
-            const records = dbList.filter(item => item.installer === installer);
-
-            if (records.length === 0) {
-                document.getElementById('detailsTitle').innerText = `Монтажник: ${installer}`;
-                document.getElementById('detailsBody').innerHTML = `<div class="empty-state">Нет записей</div>`;
-                openModal('detailsModal');
-                return;
-            }
-
-            const byDay = {};
-            records.forEach(r => {
-                let day = r.date ? r.date.split(',')[0] : 'Без даты';
-                if (!byDay[day]) byDay[day] = [];
-                byDay[day].push(r);
-            });
-
-            const sortedDays = Object.keys(byDay).sort((a, b) => {
-                const dA = parseDateFromString(a + ', 00:00');
-                const dB = parseDateFromString(b + ', 00:00');
-                if (dA && dB) return dB - dA;
-                return 0;
-            });
-
-            let html = '';
-            sortedDays.forEach(day => {
-                const dayRecords = byDay[day];
-                html += `<div class="day-group">
-                    <div class="day-title">${day} (${dayRecords.length} шт.)</div>
-                `;
-                dayRecords.forEach(r => {
-                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
-                    html += `
-                        <div class="record-item">
-                            <div class="record-main">
-                                <span class="model">${r.model || '—'}</span>
-                                <span class="serial">№ ${r.serial || '—'}</span>
-                            </div>
-                            <div class="record-meta">
-                                <div class="time">${time}</div>
-                                <div class="object-name">${r.objectName || ''}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            });
-
-            document.getElementById('detailsTitle').innerText = `Монтажник: ${installer} (${records.length} установок)`;
-            document.getElementById('detailsBody').innerHTML = html;
-            openModal('detailsModal');
-        }
-
-        function renderFullTable() {
-            const tbody = document.getElementById('fullTableBody');
-            let html = '';
-            if (dbList.length === 0) {
-                html = `<tr><td colspan="14" style="text-align:center; padding:24px; color:var(--text-muted);">Нет записей</td></tr>`;
-            } else {
-                dbList.forEach(item => {
-                    html += `<tr>
-                        <td>${item.installer || '-'}</td>
-                        <td>${item.objectName || '-'}</td>
-                        <td>${item.address || '-'}</td>
-                        <td>${item.uirgLocation || '-'}</td>
-                        <td>${item.totalPower || '-'}</td>
-                        <td>${item.model || '-'}</td>
-                        <td>${item.serial || '-'}</td>
-                        <td>${item.controllerSeal || '-'}</td>
-                        <td>${item.oldMeterModel || '-'}</td>
-                        <td>${item.oldMeterSerial || '-'}</td>
-                        <td>${item.oldMeterReadings || '-'}</td>
-                        <td>${item.newGasDirection || '-'}</td>
-                        <td>${item.simCardNumber || '-'}</td>
-                        <td>${item.date || '-'}</td>
-                    </tr>`;
-                });
-            }
-            tbody.innerHTML = html;
-        }
-
-        function exportToExcel() {
-            if (dbList.length === 0) {
-                alert('Нет данных для выгрузки.');
-                return;
-            }
-
-            const headers = [
-                'Монтажник', 'Объект', 'Адрес', 'Расположение',
-                'Мощн. (м³/ч)', 'Модель', '№', 'Пломба',
-                'Ст. модель', 'Ст. №', 'Ст. показ.', 'Направл.',
-                'SIM', 'Дата'
+            const cols = [
+                getStat('03_locks', 'options', {"Замки исправны": "Исправно", "Замки неисправны": "ОШИБКА"}, '3. Замки', 1),
+                getStat('04_grass', 'checkbox', {}, '4. Трава', 2, 'Покос'),
+                getStat('06_gas_1', 'options', {"Утечек нет": "Нет", "Обнаружена утечка": "ОШИБКА"}, '5. Утечка (до)', 3),
+                getStat('07_light', 'comment', {}, '6. Освещение', 4),
+                getStat('09_cleanup', 'options', {"Уборка выполнена": "Выполнена", "Уборка не требуется": "Не треб."}, '8. Мусор', 5, 'Уборка'),
+                getStat('11_valves', 'comment', {}, '9. Краны', 6),
+                getStat('12_pressure', 'options', {"Все исправно": "Исправно", "Неисправно": "ОШИБКА"}, '10. Давление', 7),
+                getStat('14_filter', 'options', {"Фильтр чист": "Чист", "Загрязнен": "Загрязнен", "Неисправен": "ОШИБКА"}, '11. Фильтр', 8),
+                getStat('15_branches', 'options', { "Переключил на ветку \"лето\"": "Лето", "Переключил на ветку \"зима\"": "Зима", "Ветка не переключалась (только одна)": "Одна", "Ветка лето": "Лето", "Ветка зима": "Зима", "Только одна ветка": "Одна" }, '12. Ветки', 9, 'Переключение ветки'),
+                getStat('16_meters', 'options', {"Все работает": "Работают", "Неисправность": "ОШИБКА"}, '13. Счетчики', 10),
+                getStat('17_archives', 'options', {"Архивы скачаны": "Скачаны", "Архив не скачан": "ОШИБКА"}, '14. Архивы', 11, 'Скачивание архивов'),
+                getStat('18_grounding', 'options', { "заземление есть": "Есть", "заземление сделал": "Сделал", "заземления нет": "ОШИБКА", "Есть заземление": "Есть", "Нет заземления": "ОШИБКА" }, '15. Заземление', 12, 'Сделал заземление'),
+                getStat('19_gas_2', 'options', {"Утечка отсутствует": "Нет", "Утечка устранена": "Устранена", "Утечка есть": "ОШИБКА"}, '16. Утечка (после)', 13, 'Устранил утечку'),
+                getStat('21_notes', 'comment', {}, '17. Примечания', 14)
             ];
 
-            let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-            html += '<head><meta charset="utf-8"></head>';
-            html += '<body><table>';
-
-            html += '<tr>';
-            headers.forEach(h => {
-                html += `<th style="background:#f1f5f9;color:#1e293b;font-weight:bold;border:1px solid #cbd5e1;padding:6px 8px;">${h}</th>`;
-            });
-            html += '</tr>';
-
-            dbList.forEach(item => {
-                html += '<tr>';
-                const cells = [
-                    item.installer || '',
-                    item.objectName || '',
-                    item.address || '',
-                    item.uirgLocation || '',
-                    item.totalPower || '',
-                    item.model || '',
-                    item.serial || '',
-                    item.controllerSeal || '',
-                    item.oldMeterModel || '',
-                    item.oldMeterSerial || '',
-                    item.oldMeterReadings || '',
-                    item.newGasDirection || '',
-                    item.simCardNumber || '',
-                    item.date || ''
-                ];
-                cells.forEach(val => {
-                    html += `<td style="border:1px solid #cbd5e1;padding:4px 6px;mso-number-format:'\\@';">${val}</td>`;
-                });
-                html += '</tr>';
-            });
-
-            html += '</table></body></html>';
-
-            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const dateStr = new Date().toISOString().slice(0,10);
-            a.href = url;
-            a.download = `Установки_${dateStr}.xls`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            return { cols, errorLogs, workLogs };
         }
 
-        function renderAll() {
-            renderStats();
-            renderSummary();
-            renderFullTable();
-        }
+        // Модалка для клика по ОДНОЙ конкретной ячейке (коммент или бейдж ошибки) в таблице
+        window.openPurgDetail = function(title, val, det, isErr) {
+            document.getElementById('detailsTitle').innerText = title;
+            const cls = isErr ? 'detail-box err' : 'detail-box neutral';
+            let html = `<div class="${cls}"><b>Зафиксировано:</b> ${val}`;
+            if (det && det !== val) html += `<br><br><b>Комментарий специалиста:</b><br>${det}`;
+            html += `</div>`;
+            document.getElementById('detailsBody').innerHTML = html;
+            openModal('detailsModal');
+        };
 
-        firebase.database().ref('.info/connected').on('value', snap => {
-            const dot = document.getElementById('connDot');
-            const text = document.getElementById('connText');
-            if (snap.val() === true) {
-                dot.classList.add('online');
-                text.innerText = 'В сети';
-                text.style.color = '#0284c7';
-            } else {
-                dot.classList.remove('online');
-                text.innerText = 'Офлайн';
-                text.style.color = '#64748b';
-            }
-        });
+        function hasAnyError(colsArray) { return colsArray.some(c => c.err); }
 
-        dbRef.on('value', snap => {
-            const data = snap.val();
-            dbList = [];
-            if (data) {
-                for (let key in data) {
-                    dbList.push({ id: key, ...data[key] });
-                }
-            }
-            dbList.sort((a, b) => {
-                const da = parseDateFromString(a.date);
-                const db = parseDateFromString(b.date);
-                if (da && db) return db - da;
-                if (da) return -1;
-                if (db) return 1;
-                return 0;
+        function renderPurgStats() {
+            let today = 0; const errStats = {};
+            purgList.forEach(item => {
+                if (isToday(parseDate(item.date))) today++;
+                const parsed = getPurgColumns(item);
+                parsed.cols.forEach(c => { if (c.err) { errStats[c.title] = (errStats[c.title] || 0) + 1; } });
             });
-            renderAll();
-        }, err => {
-            console.error('Firebase error:', err);
-            document.getElementById('statsGrid').innerHTML = `
-                <div class="stat-card" style="grid-column:1/-1; text-align:center; color:#db2777;">
-                    <div class="icon">⚠️</div>
-                    <div>Ошибка загрузки данных</div>
-                    <div style="font-size:0.8rem; color:var(--text-muted);">${err.message}</div>
-                </div>
+
+            const topErrors = Object.entries(errStats).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            let topHtml = topErrors.length ? topErrors.map(e => `<div class="top-error-item"><span class="error-name">${e[0]}</span><span class="error-count">${e[1]}</span></div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Проблем нет 🎉</div>';
+
+            document.getElementById('purgStatsGrid').innerHTML = `
+                <div class="stat-card accent-blue"><div class="icon">🏭</div><div class="number">${purgList.length}</div><div class="label">Всего ТО ПУРГ</div></div>
+                <div class="stat-card accent-green clickable" onclick="showPurgToday()"><div class="icon">📅</div><div class="number">${today}</div><div class="label">ТО за сегодня</div></div>
+                <div class="stat-card" style="align-items:flex-start; padding:16px 20px;"><div class="label" style="color:var(--text-primary);">🔥 Частые проблемы:</div><div class="top-errors-list">${topHtml}</div></div>
             `;
-        });
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                const target = this.dataset.target;
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                document.getElementById(target).classList.add('active');
-                renderAll();
-            });
-        });
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').then(() => {
-                console.log('SW registered');
-            }).catch(err => {
-                console.warn('SW registration failed:', err);
-            });
         }
 
-        renderAll();
+        function renderPurgSummary() {
+            const stats = {};
+            purgList.forEach(item => {
+                const inst = item.installer || 'Неизвестно';
+                if (!stats[inst]) stats[inst] = { count: 0 };
+                stats[inst].count++;
+            });
+
+            const html = Object.keys(stats).sort().map(inst => {
+                return `<tr>
+                    <td><span class="installer-name">${inst}</span></td>
+                    <td style="text-align:center;"><span class="bold-text">${stats[inst].count}</span></td>
+                    <td style="text-align:right;"><button class="action-btn" onclick="showPurgInstaller('${inst}')">Детали</button></td>
+                </tr>`;
+            }).join('');
+            document.getElementById('purgSummaryTableBody').innerHTML = html || `<tr><td colspan="3" style="text-align:center;">Нет данных ТО ПУРГ</td></tr>`;
+        }
+
+        // Рендер таблицы ПУРГ (Умная подсветка)
+        function renderPurgTable() {
+            const filtered = purgList.filter(i => {
+                const s = `${i.installer} ${i.purgName} ${i.address}`.toLowerCase();
+                return s.includes(purgSearchQuery);
+            });
+
+            const html = filtered.map(item => {
+                const parsed = getPurgColumns(item);
+                const addr = `${item.address || '-'}<span class="sub-text">${item.gps || '-'}</span>`;
+
+                const columnsHtml = parsed.cols.map(c => {
+                    if (c.text === "—") return `<td><span style="color:#cbd5e1;">—</span></td>`;
+                    
+                    let safeVal = c.fullVal.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    let safeDet = c.details.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    let safeTitle = c.title.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    
+                    if (c.err) {
+                        return `<td><span class="badge-error" onclick="openPurgDetail('${safeTitle}', '${safeVal}', '${safeDet}', true)">${c.text}</span></td>`;
+                    } else if (c.details || c.text === "Коммент.") {
+                        return `<td><span class="text-comment" onclick="openPurgDetail('${safeTitle}', '${safeVal}', '${safeDet}', false)">${c.text}</span></td>`;
+                    } else {
+                        return `<td><span class="text-normal">${c.text}</span></td>`;
+                    }
+                }).join('');
+
+                return `<tr>
+                    <td class="bold-text">${item.installer || '-'}</td>
+                    <td class="bold-text" style="color:var(--accent-blue);">${item.purgName || '-'}</td>
+                    <td>${addr}</td>
+                    <td>${item.date ? item.date.split(',').join('<span class="sub-text">') + '</span>' : '-'}</td>
+                    ${columnsHtml}
+                </tr>`;
+            }).join('');
+            document.getElementById('purgFullTableBody').innerHTML = html || `<tr><td colspan="18" style="text-align:center;">Ничего не найдено</td></tr>`;
+        }
+
+        function exportPurgToExcel() {
+            if (!purgList.length) return;
+            const hdrs = ['Монтажник', 'ПУРГ', 'Адрес', 'GPS', 'Дата', '3. Замки', '4. Трава', '5. Утечка (до)', '6. Освещение', '8. Мусор', '9. Краны', '10. Давление', '11. Фильтр', '12. Ветки', '13. Счетчики', '14. Архивы', '15. Заземление', '16. Утечка (после)', '17. Примечания'];
+            const data = [hdrs];
+            purgList.forEach(item => {
+                const parsed = getPurgColumns(item);
+                data.push([item.installer, item.purgName, item.address, item.gps, item.date, ...parsed.cols.map(x => x.excelText)]);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "ТО ПУРГ");
+            XLSX.writeFile(wb, `ТО_ПУРГ_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        // МОЩНАЯ СВОДКА ПО КАЖДОМУ ОБЪЕКТУ (Карточки в модальном окне)
+        function buildPurgModalList(records, title) {
+            const byDay = {};
+            records.forEach(r => { const d = r.date ? r.date.split(',')[0] : 'Без даты'; if (!byDay[d]) byDay[d] = []; byDay[d].push(r); });
+            let html = '';
+            
+            Object.keys(byDay).sort((a,b) => parseDate(b+',00:00') - parseDate(a+',00:00')).forEach(day => {
+                html += `<div class="day-group"><div class="day-title">${day} (${byDay[day].length} шт.)</div>`;
+                
+                byDay[day].forEach(r => {
+                    const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
+                    const parsed = getPurgColumns(r);
+                    const isErr = hasAnyError(parsed.cols);
+
+                    // Шапка карточки объекта
+                    html += `
+                        <div class="report-card ${isErr ? 'has-error' : ''}">
+                            <div class="rc-header">
+                                <div>
+                                    <div class="rc-title">${r.purgName || '—'}</div>
+                                    <div class="rc-subtitle">${r.address || '—'}</div>
+                                </div>
+                                <div class="rc-meta">
+                                    <div class="rc-time">${time}</div>
+                                    <div class="rc-installer">${r.installer || '—'}</div>
+                                </div>
+                            </div>
+                    `;
+
+                    // Тело карточки (Развернутая сводка)
+                    if (parsed.errorLogs.length > 0 || parsed.workLogs.length > 0 || (r.comments && r.comments['21_notes'])) {
+                        html += `<div class="rc-body">`;
+                        
+                        if (parsed.errorLogs.length > 0) {
+                            html += `<div class="rc-section rc-errors">
+                                <strong>ОШИБКИ:</strong>
+                                ${parsed.errorLogs.map(err => `<div>- ${err}</div>`).join('')}
+                            </div>`;
+                        }
+                        
+                        if (parsed.workLogs.length > 0) {
+                            html += `<div class="rc-section rc-works">
+                                <strong>ВЫПОЛНЕННЫЕ РАБОТЫ:</strong>
+                                ${parsed.workLogs.map(work => `<div>- ${work}</div>`).join('')}
+                            </div>`;
+                        }
+
+                        if (r.comments && r.comments['21_notes'] && r.comments['21_notes'].trim() !== '') {
+                            html += `<div class="rc-section rc-notes">
+                                <strong>ДОП. ПРИМЕЧАНИЯ:</strong>
+                                <div>- ${r.comments['21_notes']}</div>
+                            </div>`;
+                        }
+                        
+                        html += `</div>`;
+                    } else {
+                        html += `<div class="rc-body"><div class="rc-section" style="color:#64748b;">Без замечаний и дополнительных работ.</div></div>`;
+                    }
+                    html += `</div>`; // Закрываем карточку
+                });
+                html += `</div>`; // Закрываем группу дня
+            });
+            
+            document.getElementById('detailsTitle').innerText = title;
+            document.getElementById('detailsBody').innerHTML = html || '<div class="empty-state">Нет данных</div>';
+            openModal('detailsModal');
+        }
+
+        // Вызовы модалок из карточек и таблицы
+        function showPurgToday() { buildPurgModalList(purgList.filter(i => isToday(parseDate(i.date))), `ТО ПУРГ за сегодня`); }
+        function showPurgInstaller(inst) { buildPurgModalList(purgList.filter(i => i.installer === inst), `Работы монтажника: ${inst}`); }
+        
     </script>
 </body>
 </html>
