@@ -61,7 +61,7 @@
             z-index: 0; pointer-events: none;
         }
 
-        /* Центрированный контент (кроме таблиц) */
+        /* Ограничиваем ширину основной страницы */
         .app-wrapper {
             position: relative; z-index: 1; max-width: 1500px; margin: 0 auto;
         }
@@ -467,7 +467,6 @@
                     </div>
                     <div class="table-responsive">
                         <table>
-                            <!-- Убрана нумерация из заголовков -->
                             <thead>
                                 <tr>
                                     <th>Монтажник</th><th>ПУРГ</th><th>Адрес / GPS</th><th>Дата</th>
@@ -607,7 +606,6 @@
 
         // ================= 4. ЛОГИКА СМТ С РЕГИОНАЛЬНЫМ ФИЛЬТРОМ И НОВЫМИ ПОЛЯМИ =================
         function getSmtRegion(item) {
-            // Сначала проверяем новое поле city (если оно есть)
             if (item.city) {
                 const c = item.city.trim().toLowerCase();
                 if (c.includes('грозный')) return 'Грозный';
@@ -615,12 +613,24 @@
                 if (c.includes('курчалой')) return 'Курчалой';
             }
             
-            // Если поля city нет (старые записи), парсим по адресу и названию объекта
-            const textToSearch = ((item.address || '') + ' ' + (item.objectName || '')).toLowerCase();
+            const addr = ((item.address || '') + ' ' + (item.objectName || '')).toLowerCase();
             
-            if (textToSearch.includes('грозн')) return 'Грозный';
-            if (textToSearch.includes('гудермес') || textToSearch.includes('ойсхар') || textToSearch.includes('илласхан') || textToSearch.includes('кошкельд') || textToSearch.includes('энгель-юрт') || textToSearch.includes('мелчхи') || textToSearch.includes('ишхой-юрт') || textToSearch.includes('джалка') || textToSearch.includes('энгеной') || textToSearch.includes('гордали') || textToSearch.includes('шуани') || textToSearch.includes('комсомольск') || textToSearch.includes('брагуны') || textToSearch.includes('хангиш-юрт') || textToSearch.includes('азамат-юрт') || textToSearch.includes('кади-юрт') || textToSearch.includes('бильтой')) return 'Гудермес';
-            if (textToSearch.includes('курчало') || textToSearch.includes('гелдах') || textToSearch.includes('цаци-юрт') || textToSearch.includes('бачи-юрт') || textToSearch.includes('майртуп') || textToSearch.includes('джугурт') || textToSearch.includes('центорой') || textToSearch.includes('ахмат-юрт') || textToSearch.includes('аллерой') || textToSearch.includes('ахкинчу') || textToSearch.includes('хиди-хутор') || textToSearch.includes('регита')) return 'Курчалой';
+            // 1. Сначала ищем четкие указания района или города
+            if (addr.includes('гудермесск') || addr.includes('г. гудермес') || addr.includes('г.гудермес')) return 'Гудермес';
+            if (addr.includes('курчалоевск') || addr.includes('г. курчалой') || addr.includes('г.курчалой')) return 'Курчалой';
+            if (addr.includes('грозненский р-н') || addr.includes('грозненский район')) return 'Грозный';
+            if (addr.includes('г. грозный') || addr.includes('г.грозный') || addr.includes('город грозный')) return 'Грозный';
+
+            // 2. Ищем по селам (жесткая привязка к району)
+            if (addr.includes('ойсхар') || addr.includes('илласхан') || addr.includes('кошкельд') || addr.includes('энгель-юрт') || addr.includes('мелчхи') || addr.includes('ишхой-юрт') || addr.includes('джалка') || addr.includes('энгеной') || addr.includes('гордали') || addr.includes('шуани') || addr.includes('комсомольск') || addr.includes('брагуны') || addr.includes('хангиш-юрт') || addr.includes('азамат-юрт') || addr.includes('кади-юрт') || addr.includes('бильтой')) return 'Гудермес';
+            if (addr.includes('гелдах') || addr.includes('цаци-юрт') || addr.includes('бачи-юрт') || addr.includes('майртуп') || addr.includes('джугурт') || addr.includes('центорой') || addr.includes('ахмат-юрт') || addr.includes('аллерой') || addr.includes('ахкинчу') || addr.includes('хиди-хутор') || addr.includes('регита')) return 'Курчалой';
+
+            // 3. Фолбэк (очищаем от улиц, чтобы ул. Грозненская не улетала в Грозный)
+            let safeAddr = addr.replace(/грозненск\S*/g, '').replace(/гудермесск\S*/g, '').replace(/курчалоевск\S*/g, '');
+            
+            if (safeAddr.includes('гудермес')) return 'Гудермес';
+            if (safeAddr.includes('курчало')) return 'Курчалой';
+            if (safeAddr.includes('грозн')) return 'Грозный';
             
             return 'Другие';
         }
@@ -693,7 +703,6 @@
         function renderSmtTable() {
             let list = getRegionFilteredSmt();
             const filtered = list.filter(i => {
-                // Включаем comment и city в поиск
                 const s = `${i.installer} ${i.objectName} ${i.address} ${i.model} ${i.serial} ${i.comment||''} ${i.city||''}`.toLowerCase();
                 return s.includes(smtSearchQuery);
             });
@@ -722,7 +731,6 @@
         function exportSmtToExcel() {
             let list = getRegionFilteredSmt();
             if (!list.length) return;
-            // Добавляем Город и Комментарий в выгрузку
             const hdrs = ['Монтажник', 'Объект', 'Город', 'Адрес', 'Расположение', 'Мощн.', 'Модель', '№', 'Пломба', 'Ст. модель', 'Ст. №', 'Ст. показ.', 'Направл.', 'SIM', 'Дата', 'Комментарий'];
             const data = [hdrs];
             list.forEach(item => {
@@ -831,7 +839,7 @@
             return errWords.some(w => cleanT.includes(w));
         }
 
-        // Парсер ТО ПУРГ (с учетом новых и старых записей Заземления)
+        // Парсер ТО ПУРГ
         function getPurgColumns(item) {
             const s = item.selections || {}; const c = item.comments || {}; const ch = item.checkboxes || {};
             
@@ -885,7 +893,7 @@
 
                 // Логирование ОШИБОК и перезапись названия бейджика
                 if (isErr) {
-                    short = "ОШИБКА"; // В ТАБЛИЦЕ ВСЕ ОШИБКИ ДОЛЖНЫ БЫТЬ "ОШИБКА"
+                    short = "ОШИБКА";
 
                     let errText = (details && details.trim() !== '') ? details : fullVal;
                     if (errText === "—") errText = "Неисправность";
@@ -984,15 +992,12 @@
             const html = filtered.map(item => {
                 const parsed = getPurgColumns(item);
                 
-                // Формирование кликабельного GPS (Ссылки или Яндекс Карты)
                 let gpsHtml = '<span class="sub-text">-</span>';
                 if (item.gps && item.gps !== '-' && item.gps !== 'Нет') {
                     let gpsVal = item.gps.trim();
                     if (gpsVal.startsWith('http://') || gpsVal.startsWith('https://')) {
-                        // Если это уже готовая ссылка (например, Google Maps)
                         gpsHtml = `<br><a href="${gpsVal}" target="_blank" class="gps-link">${gpsVal}</a>`;
                     } else {
-                        // Если это просто координаты
                         let coords = gpsVal.replace(/\s+/g, '');
                         gpsHtml = `<br><a href="https://yandex.ru/maps/?text=${coords}" target="_blank" class="gps-link">${item.gps}</a>`;
                     }
