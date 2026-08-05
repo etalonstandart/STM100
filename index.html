@@ -17,7 +17,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     
-    <!-- SheetJS (для выгрузки в настоящий .xlsx) -->
+    <!-- SheetJS (для выгрузки и импорта .xlsx) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,6 +61,7 @@
             z-index: 0; pointer-events: none;
         }
 
+        /* Ограничиваем ширину основной страницы */
         .app-wrapper {
             position: relative; z-index: 1; max-width: 1500px; margin: 0 auto;
         }
@@ -158,6 +159,16 @@
             background: var(--bg-secondary); border: 1px solid var(--glass-border);
             border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-glow);
         }
+
+        /* Вырываем широкую таблицу из рамок app-wrapper */
+        .breakout-table {
+            width: 98vw;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: none;
+        }
+
         .table-toolbar {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); background: #f8fafc; gap: 10px;
@@ -172,6 +183,8 @@
         .search-box input:focus { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
         .search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: #94a3b8; }
 
+        .btn-group { display: flex; gap: 10px; }
+        
         .export-btn {
             background: rgba(2, 132, 199, 0.08); border: 1px solid var(--accent-cyan);
             color: var(--accent-cyan); padding: 8px 16px; border-radius: 8px; cursor: pointer;
@@ -180,8 +193,13 @@
         }
         .export-btn:hover { background: rgba(2, 132, 199, 0.15); box-shadow: 0 0 20px rgba(2, 132, 199, 0.15); }
         
-        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 650px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        /* ШИРОКАЯ ТАБЛИЦА С ПРОКРУТКОЙ */
+        .table-responsive { 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+            max-height: 650px; 
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 1600px; /* Чтобы не сжимались ячейки */ }
         th {
             text-align: left; padding: 12px 16px; color: var(--text-secondary);
             font-weight: 600; font-size: 0.7rem; text-transform: uppercase;
@@ -196,6 +214,13 @@
         
         .bold-text { font-weight: 600; color: #0f172a; }
         .sub-text { font-size: 0.65rem; color: #94a3b8; display: block; margin-top: 2px;}
+
+        /* Ссылка на Яндекс/Google Карты */
+        .gps-link {
+            font-size: 0.65rem; color: var(--accent-cyan); display: block; margin-top: 4px; 
+            text-decoration: none; font-weight: 500; transition: color 0.2s;
+        }
+        .gps-link:hover { text-decoration: underline; color: var(--accent-blue); }
 
         /* ===== Спец. стили для ТО ПУРГ (Умная подсветка) ===== */
         .badge-error {
@@ -283,6 +308,8 @@
             .search-box { max-width: 100%; }
             th, td { padding: 8px 10px; font-size: 0.75rem; }
             .main-nav { justify-content: center; }
+            .btn-group { width: 100%; justify-content: space-between; }
+            .breakout-table { width: 100vw; }
         }
     </style>
 </head>
@@ -317,8 +344,8 @@
             <div id="smtSummary" class="sub-tab-content active">
                 <div class="stats-grid" id="smtStatsGrid"></div>
                 <div class="table-container">
-                    <div class="table-responsive">
-                        <table>
+                    <div class="table-responsive" style="min-width: 100%;">
+                        <table style="min-width: 100%;">
                             <thead>
                                 <tr>
                                     <th>Имя монтажника</th>
@@ -332,9 +359,9 @@
                 </div>
             </div>
 
-            <!-- СМТ Таблица -->
+            <!-- СМТ Таблица (РАСШИРЕННАЯ) -->
             <div id="smtFullTable" class="sub-tab-content">
-                <div class="table-container">
+                <div class="table-container breakout-table">
                     <div class="table-toolbar">
                         <div class="search-box">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
@@ -375,8 +402,8 @@
             <div id="purgSummary" class="sub-tab-content active">
                 <div class="stats-grid" id="purgStatsGrid"></div>
                 <div class="table-container">
-                    <div class="table-responsive">
-                        <table>
+                    <div class="table-responsive" style="min-width: 100%;">
+                        <table style="min-width: 100%;">
                             <thead>
                                 <tr>
                                     <th>Имя исполнителя</th>
@@ -390,28 +417,37 @@
                 </div>
             </div>
 
-            <!-- ПУРГ Таблица -->
+            <!-- ПУРГ Таблица (РАСШИРЕННАЯ) -->
             <div id="purgFullTable" class="sub-tab-content">
-                <div class="table-container">
+                <div class="table-container breakout-table">
                     <div class="table-toolbar">
                         <div class="search-box">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                             <input type="text" id="purgSearch" placeholder="Поиск по ПУРГ...">
                         </div>
-                        <button class="export-btn" onclick="exportPurgToExcel()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                            Выгрузить в XLSX
-                        </button>
+                        
+                        <div class="btn-group">
+                            <input type="file" id="importPurgInput" accept=".xlsx, .xls" style="display:none;" onchange="importPurgExcel(event)">
+                            <button class="export-btn" onclick="document.getElementById('importPurgInput').click()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Импорт
+                            </button>
+                            <button class="export-btn" onclick="exportPurgToExcel()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                                Выгрузить в XLSX
+                            </button>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table>
+                            <!-- Убрана нумерация из заголовков -->
                             <thead>
                                 <tr>
                                     <th>Монтажник</th><th>ПУРГ</th><th>Адрес / GPS</th><th>Дата</th>
-                                    <th>3. Замки</th><th>4. Трава</th><th>5. Утечка (до)</th><th>6. Освещ.</th>
-                                    <th>8. Мусор</th><th>9. Краны</th><th>10. Давл.</th><th>11. Фильтр</th>
-                                    <th>12. Ветки</th><th>13. Счетчики</th><th>14. Архивы</th><th>15. Заземл.</th>
-                                    <th>16. Утечка (посл.)</th><th>17. Примечания</th>
+                                    <th>Замки</th><th>Трава</th><th>Утечка (до)</th><th>Освещ.</th>
+                                    <th>Мусор</th><th>Краны</th><th>Давл.</th><th>Фильтр</th>
+                                    <th>Ветки</th><th>Счетчики</th><th>Архивы</th><th>Заземл.</th>
+                                    <th>Утечка (посл.)</th><th>Примечания</th>
                                 </tr>
                             </thead>
                             <tbody id="purgFullTableBody"></tbody>
@@ -497,6 +533,19 @@
             return dateObj >= todayStart;
         }
 
+        // ================= УНИФИКАЦИЯ ИМЕН (Устранение дублей) =================
+        function normalizeName(name) {
+            if (!name || name === '-' || name === '—') return '-';
+            let n = name.replace(/\s+/g, ' ').trim();
+            // Сводим дубликаты к единому формату
+            if (/^Атаев\s*К/i.test(n)) return 'Атаев К М';
+            if (/^Шамилов\s*Ш/i.test(n)) return 'Шамилов Ш.А.';
+            if (/^Гидаев\s*А/i.test(n)) return 'Гидаев А.Л.';
+            if (/^Саккаев\s*Д/i.test(n)) return 'Саккаев Д.';
+            if (/^Эмзаев\s*И/i.test(n)) return 'Эмзаев И.';
+            return n;
+        }
+
         // ================= 3. FIREBASE ИНИЦИАЛИЗАЦИЯ =================
         // База СМТ
         const configSMT = {
@@ -531,7 +580,13 @@
         // ================= 4. ЛОГИКА СМТ =================
         refSMT.on('value', snap => {
             const data = snap.val(); smtList = [];
-            if (data) for (let key in data) smtList.push({ id: key, ...data[key] });
+            if (data) {
+                for (let key in data) {
+                    let item = data[key];
+                    item.installer = normalizeName(item.installer); // Применяем нормализацию
+                    smtList.push({ id: key, ...item });
+                }
+            }
             smtList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
             renderSmtStats(); renderSmtSummary(); renderSmtTable();
         });
@@ -561,7 +616,7 @@
 
         function renderSmtSummary() {
             const stats = {};
-            smtList.forEach(item => { const inst = item.installer || 'Неизвестно'; stats[inst] = (stats[inst] || 0) + 1; });
+            smtList.forEach(item => { const inst = item.installer; stats[inst] = (stats[inst] || 0) + 1; });
             const html = Object.keys(stats).sort().map(inst => `
                 <tr>
                     <td><span class="installer-name">${inst}</span></td>
@@ -611,7 +666,6 @@
             XLSX.writeFile(wb, `СМТ_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // Модалки СМТ
         function buildSmtModalList(records, title) {
             const byDay = {};
             records.forEach(r => { const d = r.date ? r.date.split(',')[0] : 'Без даты'; if (!byDay[d]) byDay[d] = []; byDay[d].push(r); });
@@ -634,10 +688,70 @@
         // ================= 5. ЛОГИКА ТО ПУРГ (Детальная аналитика) =================
         refPURG.on('value', snap => {
             const data = snap.val(); purgList = [];
-            if (data) for (let key in data) purgList.push({ id: key, ...data[key] });
+            if (data) {
+                for (let key in data) {
+                    let item = data[key];
+                    item.installer = normalizeName(item.installer); // Применяем нормализацию к ПУРГ
+                    purgList.push({ id: key, ...item });
+                }
+            }
             purgList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
             renderPurgStats(); renderPurgSummary(); renderPurgTable();
         });
+
+        // Импорт из Excel
+        function importPurgExcel(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+                    const firstSheet = workbook.SheetNames[0];
+                    const json = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+
+                    let addedCount = 0;
+                    json.forEach(row => {
+                        const purgName = row['Наименование ПУРГ'] || row['ПУРГ'] || '-';
+                        const installer = normalizeName(row['ФИО работника'] || row['Монтажник'] || '-');
+                        const gps = row['Координаты'] || row['GPS'] || '-';
+                        
+                        let dateStr = '-';
+                        if (row['Дата ТО']) {
+                            let dObj = row['Дата ТО'];
+                            if (dObj instanceof Date) {
+                                const dd = String(dObj.getDate()).padStart(2, '0');
+                                const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+                                dateStr = `${dd}.${mm}.${dObj.getFullYear()}, 12:00`;
+                            } else {
+                                dateStr = String(dObj) + ", 12:00";
+                            }
+                        }
+
+                        const payload = {
+                            purgName: String(purgName),
+                            installer: String(installer),
+                            gps: String(gps),
+                            address: '-',
+                            date: dateStr,
+                            timestamp: Date.now(),
+                            selections: {},
+                            comments: {},
+                            checkboxes: {}
+                        };
+                        refPURG.push(payload);
+                        addedCount++;
+                    });
+                    alert(`Успешно добавлено объектов: ${addedCount}`);
+                } catch (error) {
+                    console.error(error);
+                    alert("Ошибка при чтении файла. Убедитесь, что это корректный .xlsx");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            e.target.value = "";
+        }
 
         // Надежный поиск ошибок в ручном тексте
         function isCommentError(text) {
@@ -648,21 +762,21 @@
             return errWords.some(w => cleanT.includes(w));
         }
 
-        // Парсер ТО ПУРГ
+        // Парсер ТО ПУРГ (с учетом новых и старых записей Заземления)
         function getPurgColumns(item) {
             const s = item.selections || {}; const c = item.comments || {}; const ch = item.checkboxes || {};
             
-            // "заземление сделал" / "Сделал заземление" теперь учитывается как ошибка
             const errOptions = [
                 "Обнаружена утечка", "Неисправно", "Загрязнен", "Неисправен", "Неисправность", 
-                "Архив не скачан", "заземления нет", "Нет заземления", "Утечка есть", "Замки неисправны",
-                "заземление сделал", "Сделал заземление"
+                "Архив не скачан", "Утечка есть", "Замки неисправны",
+                "заземления нет", "Заземления нет", "Нет заземления",
+                "заземление сделал", "Заземление сделал", "Сделал заземление",
+                "Утечка устранена"
             ];
             
             let errorLogs = [];
             let workLogs = [];
 
-            // Функция получения статуса колонки и одновременно сбора логов для красивой сводки
             function getStat(prefix, type, map, title, pIndex, workName) {
                 let fullVal = "—", short = "—", isErr = false, details = "";
                 
@@ -677,10 +791,11 @@
                         short = map[fullVal] || fullVal;
                         if (c[prefix] && c[prefix].trim() !== '') details = c[prefix];
 
+                        let vLower = fullVal.toLowerCase();
                         if (workName && (
                             fullVal === "Уборка выполнена" || fullVal.includes("Переключил на ветку") ||
-                            fullVal === "Архивы скачаны" || fullVal === "заземление сделал" || 
-                            fullVal === "Сделал заземление" || fullVal === "Утечка устранена"
+                            fullVal === "Архивы скачаны" || vLower.includes("сделал") ||
+                            fullVal === "Утечка устранена"
                         )) {
                             workLogs.push(`П${pIndex}: ${workName}`);
                         }
@@ -699,15 +814,17 @@
                     }
                 }
 
-                // Логирование ОШИБОК для детального отчета
+                // Логирование ОШИБОК и перезапись названия бейджика
                 if (isErr) {
+                    short = "ОШИБКА"; // В ТАБЛИЦЕ ВСЕ ОШИБКИ ДОЛЖНЫ БЫТЬ "ОШИБКА"
+
                     let errText = (details && details.trim() !== '') ? details : fullVal;
                     if (errText === "—") errText = "Неисправность";
                     
-                    // Понятные описания для нестандартных ошибок (чтобы в логах было красиво)
-                    if (errText === "заземление сделал" || errText === "Сделал заземление") {
+                    let eLower = errText.toLowerCase();
+                    if (eLower.includes("сделал заземление") || eLower.includes("заземление сделал")) {
                         errorLogs.push(`П${pIndex}: Отсутствовало заземление (исправлено)`);
-                    } else if (errText === "Утечка устранена") {
+                    } else if (eLower.includes("утечка устранена")) {
                         errorLogs.push(`П${pIndex}: Была утечка (устранена)`);
                     } else {
                         errorLogs.push(`П${pIndex}: ${errText}`);
@@ -722,26 +839,25 @@
             }
 
             const cols = [
-                getStat('03_locks', 'options', {"Замки исправны": "Исправно", "Замки неисправны": "ОШИБКА"}, '3. Замки', 1),
-                getStat('04_grass', 'checkbox', {}, '4. Трава', 2, 'Покос'),
-                getStat('06_gas_1', 'options', {"Утечек нет": "Нет", "Обнаружена утечка": "ОШИБКА"}, '5. Утечка (до)', 3),
-                getStat('07_light', 'comment', {}, '6. Освещение', 4),
-                getStat('09_cleanup', 'options', {"Уборка выполнена": "Выполнена", "Уборка не требуется": "Не треб."}, '8. Мусор', 5, 'Уборка'),
-                getStat('11_valves', 'comment', {}, '9. Краны', 6),
-                getStat('12_pressure', 'options', {"Все исправно": "Исправно", "Неисправно": "ОШИБКА"}, '10. Давление', 7),
-                getStat('14_filter', 'options', {"Фильтр чист": "Чист", "Загрязнен": "Загрязнен", "Неисправен": "ОШИБКА"}, '11. Фильтр', 8),
-                getStat('15_branches', 'options', { "Переключил на ветку \"лето\"": "Лето", "Переключил на ветку \"зима\"": "Зима", "Ветка не переключалась (только одна)": "Одна", "Ветка лето": "Лето", "Ветка зима": "Зима", "Только одна ветка": "Одна" }, '12. Ветки', 9, 'Переключение ветки'),
-                getStat('16_meters', 'options', {"Все работает": "Работают", "Неисправность": "ОШИБКА"}, '13. Счетчики', 10),
-                getStat('17_archives', 'options', {"Архивы скачаны": "Скачаны", "Архив не скачан": "ОШИБКА"}, '14. Архивы', 11, 'Скачивание архивов'),
-                getStat('18_grounding', 'options', { "заземление есть": "Есть", "заземление сделал": "Сделал", "заземления нет": "ОШИБКА", "Есть заземление": "Есть", "Нет заземления": "ОШИБКА" }, '15. Заземление', 12, 'Сделал заземление'),
-                getStat('19_gas_2', 'options', {"Утечка отсутствует": "Нет", "Утечка устранена": "Устранена", "Утечка есть": "ОШИБКА"}, '16. Утечка (после)', 13, 'Устранил утечку'),
-                getStat('21_notes', 'comment', {}, '17. Примечания', 14)
+                getStat('03_locks', 'options', {"Замки исправны": "Исправно"}, 'Замки', 1),
+                getStat('04_grass', 'checkbox', {}, 'Трава', 2, 'Покос'),
+                getStat('06_gas_1', 'options', {"Утечек нет": "Нет"}, 'Утечка (до)', 3),
+                getStat('07_light', 'comment', {}, 'Освещение', 4),
+                getStat('09_cleanup', 'options', {"Уборка выполнена": "Выполнена", "Уборка не требуется": "Не треб."}, 'Мусор', 5, 'Уборка'),
+                getStat('11_valves', 'comment', {}, 'Краны', 6),
+                getStat('12_pressure', 'options', {"Все исправно": "Исправно"}, 'Давление', 7),
+                getStat('14_filter', 'options', {"Фильтр чист": "Чист"}, 'Фильтр', 8),
+                getStat('15_branches', 'options', { "Переключил на ветку \"лето\"": "Лето", "Переключил на ветку \"зима\"": "Зима", "Ветка не переключалась (только одна)": "Одна", "Ветка лето": "Лето", "Ветка зима": "Зима", "Только одна ветка": "Одна" }, 'Ветки', 9, 'Переключение ветки'),
+                getStat('16_meters', 'options', {"Все работает": "Работают"}, 'Счетчики', 10),
+                getStat('17_archives', 'options', {"Архивы скачаны": "Скачаны"}, 'Архивы', 11, 'Скачивание архивов'),
+                getStat('18_grounding', 'options', { "заземление есть": "Есть", "Заземление есть": "Есть", "Есть заземление": "Есть" }, 'Заземление', 12, 'Сделал заземление'),
+                getStat('19_gas_2', 'options', {"Утечка отсутствует": "Нет"}, 'Утечка (после)', 13, 'Устранил утечку'),
+                getStat('21_notes', 'comment', {}, 'Примечания', 14)
             ];
 
             return { cols, errorLogs, workLogs };
         }
 
-        // Модалка для клика по ОДНОЙ конкретной ячейке (коммент или бейдж ошибки) в таблице
         window.openPurgDetail = function(title, val, det, isErr) {
             document.getElementById('detailsTitle').innerText = title;
             const cls = isErr ? 'detail-box err' : 'detail-box neutral';
@@ -775,7 +891,7 @@
         function renderPurgSummary() {
             const stats = {};
             purgList.forEach(item => {
-                const inst = item.installer || 'Неизвестно';
+                const inst = item.installer;
                 if (!stats[inst]) stats[inst] = { count: 0 };
                 stats[inst].count++;
             });
@@ -790,7 +906,6 @@
             document.getElementById('purgSummaryTableBody').innerHTML = html || `<tr><td colspan="3" style="text-align:center;">Нет данных ТО ПУРГ</td></tr>`;
         }
 
-        // Рендер таблицы ПУРГ (Умная подсветка)
         function renderPurgTable() {
             const filtered = purgList.filter(i => {
                 const s = `${i.installer} ${i.purgName} ${i.address}`.toLowerCase();
@@ -799,7 +914,23 @@
 
             const html = filtered.map(item => {
                 const parsed = getPurgColumns(item);
-                const addr = `${item.address || '-'}<span class="sub-text">${item.gps || '-'}</span>`;
+                
+                // Формирование кликабельного GPS (Ссылки или Яндекс Карты)
+                let gpsHtml = '<span class="sub-text">-</span>';
+                if (item.gps && item.gps !== '-' && item.gps !== 'Нет') {
+                    let gpsVal = item.gps.trim();
+                    if (gpsVal.startsWith('http://') || gpsVal.startsWith('https://')) {
+                        // Если это уже готовая ссылка (например, Google Maps)
+                        gpsHtml = `<br><a href="${gpsVal}" target="_blank" class="gps-link">${gpsVal}</a>`;
+                    } else {
+                        // Если это просто координаты
+                        let coords = gpsVal.replace(/\s+/g, '');
+                        gpsHtml = `<br><a href="https://yandex.ru/maps/?text=${coords}" target="_blank" class="gps-link">${item.gps}</a>`;
+                    }
+                } else if (item.gps) {
+                    gpsHtml = `<br><span class="sub-text">${item.gps}</span>`;
+                }
+                const addr = `${item.address || '-'}${gpsHtml}`;
 
                 const columnsHtml = parsed.cols.map(c => {
                     if (c.text === "—") return `<td><span style="color:#cbd5e1;">—</span></td>`;
@@ -821,7 +952,7 @@
                     <td class="bold-text">${item.installer || '-'}</td>
                     <td class="bold-text" style="color:var(--accent-blue);">${item.purgName || '-'}</td>
                     <td>${addr}</td>
-                    <td>${item.date ? item.date.split(',').join('<span class="sub-text">') + '</span>' : '-'}</td>
+                    <td>${item.date ? item.date.split(',').join('<br><span class="sub-text">') + '</span>' : '-'}</td>
                     ${columnsHtml}
                 </tr>`;
             }).join('');
@@ -830,7 +961,7 @@
 
         function exportPurgToExcel() {
             if (!purgList.length) return;
-            const hdrs = ['Монтажник', 'ПУРГ', 'Адрес', 'GPS', 'Дата', '3. Замки', '4. Трава', '5. Утечка (до)', '6. Освещение', '8. Мусор', '9. Краны', '10. Давление', '11. Фильтр', '12. Ветки', '13. Счетчики', '14. Архивы', '15. Заземление', '16. Утечка (после)', '17. Примечания'];
+            const hdrs = ['Монтажник', 'ПУРГ', 'Адрес', 'GPS', 'Дата', 'Замки', 'Трава', 'Утечка (до)', 'Освещение', 'Мусор', 'Краны', 'Давление', 'Фильтр', 'Ветки', 'Счетчики', 'Архивы', 'Заземление', 'Утечка (после)', 'Примечания'];
             const data = [hdrs];
             purgList.forEach(item => {
                 const parsed = getPurgColumns(item);
@@ -842,7 +973,6 @@
             XLSX.writeFile(wb, `ТО_ПУРГ_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // МОЩНАЯ СВОДКА ПО КАЖДОМУ ОБЪЕКТУ (Карточки в модальном окне)
         function buildPurgModalList(records, title) {
             const byDay = {};
             records.forEach(r => { const d = r.date ? r.date.split(',')[0] : 'Без даты'; if (!byDay[d]) byDay[d] = []; byDay[d].push(r); });
@@ -856,7 +986,6 @@
                     const parsed = getPurgColumns(r);
                     const isErr = hasAnyError(parsed.cols);
 
-                    // Шапка карточки объекта
                     html += `
                         <div class="report-card ${isErr ? 'has-error' : ''}">
                             <div class="rc-header">
@@ -871,7 +1000,6 @@
                             </div>
                     `;
 
-                    // Тело карточки (Развернутая сводка)
                     if (parsed.errorLogs.length > 0 || parsed.workLogs.length > 0 || (r.comments && r.comments['21_notes'])) {
                         html += `<div class="rc-body">`;
                         
@@ -895,14 +1023,13 @@
                                 <div>- ${r.comments['21_notes']}</div>
                             </div>`;
                         }
-                        
                         html += `</div>`;
                     } else {
                         html += `<div class="rc-body"><div class="rc-section" style="color:#64748b;">Без замечаний и дополнительных работ.</div></div>`;
                     }
-                    html += `</div>`; // Закрываем карточку
+                    html += `</div>`;
                 });
-                html += `</div>`; // Закрываем группу дня
+                html += `</div>`;
             });
             
             document.getElementById('detailsTitle').innerText = title;
@@ -910,7 +1037,6 @@
             openModal('detailsModal');
         }
 
-        // Вызовы модалок из карточек и таблицы
         function showPurgToday() { buildPurgModalList(purgList.filter(i => isToday(parseDate(i.date))), `ТО ПУРГ за сегодня`); }
         function showPurgInstaller(inst) { buildPurgModalList(purgList.filter(i => i.installer === inst), `Работы монтажника: ${inst}`); }
         
