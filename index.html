@@ -143,7 +143,7 @@
         .stats-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 18px; margin-bottom: 30px;
-            /* Убрано align-items: start, чтобы карточки растягивались и были одной высоты */
+            align-items: start;
         }
         .stat-card {
             background: var(--bg-secondary); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -156,12 +156,10 @@
         .stat-card:hover { transform: translateY(-5px); box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08); }
         .stat-card.clickable { cursor: pointer; }
         .stat-card.clickable:hover { border-color: var(--accent-cyan); box-shadow: 0 8px 40px rgba(2, 132, 199, 0.18); }
-        .stat-card.clickable.error-card:hover { border-color: var(--accent-pink); box-shadow: 0 8px 40px rgba(219, 39, 119, 0.18); }
         
         .stat-card .icon { font-size: 1.5rem; line-height: 1; margin-bottom: 8px; opacity: 0.8; }
         .stat-card .number { font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 2rem; color: var(--text-primary); line-height: 1.2; margin-bottom: 4px;}
         .stat-card .label { font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;}
-        .stat-card .sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
         
         .stat-card.accent-cyan .number { color: var(--accent-cyan); }
         .stat-card.accent-green .number { color: var(--success-color); }
@@ -170,10 +168,10 @@
         /* Для мини-таблиц остатков внутри карточек */
         .mini-table {
             width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-top: 12px;
-            min-width: 0 !important; /* Важно: отвязываем от глобальной min-width 1600px */
+            min-width: 0 !important; 
         }
         .mini-table th {
-            padding-bottom: 8px; border-bottom: 2px solid rgba(0,0,0,0.08); 
+            padding-bottom: 8px; border-bottom: 2px dashed rgba(0,0,0,0.08); 
             color: var(--text-muted); font-weight: 600; font-size: 0.7rem; 
             text-transform: uppercase; background: transparent; position: static;
         }
@@ -196,20 +194,14 @@
 
         /* Вырываем широкую таблицу из рамок app-wrapper */
         .breakout-table {
-            width: 98vw;
-            position: relative;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: none;
+            width: 98vw; position: relative; left: 50%; transform: translateX(-50%); max-width: none;
         }
 
         .table-toolbar {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); background: #f8fafc; gap: 10px;
         }
-        .search-box {
-            flex: 1; max-width: 300px; position: relative;
-        }
+        .search-box { flex: 1; max-width: 300px; position: relative; }
         .search-box input {
             width: 100%; padding: 8px 12px 8px 32px; border-radius: 8px; border: 1px solid #cbd5e1;
             font-family: 'Inter', sans-serif; font-size: 0.85rem; outline: none; transition: 0.2s;
@@ -228,11 +220,7 @@
         .export-btn:hover { background: rgba(2, 132, 199, 0.15); box-shadow: 0 0 20px rgba(2, 132, 199, 0.15); }
         
         /* ШИРОКАЯ ТАБЛИЦА С ПРОКРУТКОЙ */
-        .table-responsive { 
-            overflow-x: auto; 
-            -webkit-overflow-scrolling: touch; 
-            max-height: 650px; 
-        }
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 650px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 1600px; }
         th {
             text-align: left; padding: 12px 16px; color: var(--text-secondary);
@@ -276,7 +264,6 @@
             padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 500; transition: all 0.25s;
         }
         .action-btn:hover { background: rgba(2, 132, 199, 0.08); border-color: var(--accent-cyan); color: var(--accent-cyan); }
-        .action-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
         /* ===== Модальное окно ===== */
         .modal-overlay {
@@ -303,13 +290,22 @@
         .detail-box.err { background: #fef2f2; border: 1px solid #fca5a5; color: #991b1b; }
         .detail-box.neutral { background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; }
 
+        /* ОРИГИНАЛЬНЫЙ СТИЛЬ КАРТОЧЕК СМТ ИЗ INDEX (1).HTML */
         .day-group { margin-bottom: 20px; }
         .day-title { font-family: 'Orbitron', sans-serif; font-weight: 500; font-size: 0.75rem; color: var(--accent-cyan); background: rgba(2, 132, 199, 0.06); padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 10px; border: 1px solid rgba(2, 132, 199, 0.08); }
-        
+        .record-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 8px; background: #f8fafc; margin-bottom: 6px; border-left: 3px solid rgba(2, 132, 199, 0.3); }
+        .record-item.error-border { border-left-color: var(--accent-pink); background: #fdf2f8;}
+        .record-main { display: flex; flex-direction: column; }
+        .record-main .model { font-weight: 600; color: var(--text-primary); font-size: 0.9rem;}
+        .record-main .serial { font-size: 0.75rem; color: var(--text-muted); margin-top:2px;}
+        .record-meta { text-align: right; }
+        .record-meta .time { font-weight: 700; font-size: 0.9rem; }
+        .record-meta .object-name { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;}
+
         /* Детальные карточки ПУРГ */
         .report-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
         .report-card.has-error { border-left: 4px solid var(--danger-color); }
-        .report-card:not(.has-error) { border-left: 4px solid var(--success-color); }
+        .report-card:not(.has-error) { border-left: 4px solid #10b981; }
         .rc-header { display: flex; justify-content: space-between; align-items:flex-start; padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
         .rc-title { font-weight: 700; color: #0f172a; font-size: 1rem; }
         .rc-subtitle { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
@@ -320,15 +316,7 @@
         .rc-section { font-size: 0.85rem; color: #334155; line-height: 1.5; }
         .rc-section strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
         .rc-errors strong { color: var(--danger-color); }
-        .rc-works strong { color: var(--success-color); }
-        
-        .record-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 8px; background: #f8fafc; margin-bottom: 6px; border-left: 3px solid rgba(2, 132, 199, 0.3); }
-        .record-item.error-border { border-left-color: var(--accent-pink); background: #fdf2f8;}
-        .record-main { display: flex; flex-direction: column; }
-        .record-main .model { font-weight: 600; color: var(--text-primary); font-size: 0.9rem;}
-        .record-main .serial { font-size: 0.75rem; color: var(--text-muted); margin-top:2px;}
-        .record-meta { text-align: right; }
-        .record-meta .time { font-weight: 700; font-size: 0.9rem; }
+        .rc-works strong { color: #10b981; }
 
         /* ===== Адаптив ===== */
         @media (max-width: 768px) {
@@ -337,7 +325,6 @@
             .logo { justify-content: center; }
             .status { justify-content: center; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .stat-card .number { font-size: 1.6rem; }
             .table-toolbar { flex-direction: column; align-items: stretch; }
             .search-box { max-width: 100%; }
             th, td { padding: 8px 10px; font-size: 0.75rem; }
@@ -516,24 +503,6 @@
     </div>
 
     <script>
-        // ================= НАСТРОЙКИ ПАРТИЙ СМТ (ОСТАТКИ) =================
-        // ТОЧНЫЕ ИСХОДНЫЕ ДАННЫЕ ДЛЯ 1-Й ПАРТИИ (608 ШТ)
-        const BATCH_1_INITIAL = {
-            'G4': 98,    
-            'G6': 236,   
-            'G10': 70,   
-            'G16': 52,   
-            'G25': 43,   
-            'G40': 75,   
-            'G65': 34     
-        };
-
-        // ТОЧНЫЕ ИСХОДНЫЕ ДАННЫЕ ДЛЯ 2-Й ПАРТИИ (1775 ШТ)
-        const BATCH_2_INITIAL = {
-            'G6': 1000   
-        };
-
-
         // ================= 1. АНИМАЦИЯ ФОНА =================
         (function initStars() {
             const canvas = document.getElementById('stars-canvas');
@@ -594,7 +563,7 @@
             return dateObj >= todayStart;
         }
 
-        // ================= УНИФИКАЦИЯ ИМЕН (Устранение дублей) =================
+        // ================= УНИФИКАЦИЯ ИМЕН И НАЗВАНИЙ =================
         function normalizeName(name) {
             if (!name || name === '-' || name === '—') return '-';
             let n = name.replace(/\s+/g, ' ').trim();
@@ -606,6 +575,11 @@
             return n;
         }
 
+        function shortenSmtName(fullName) {
+            if (!fullName || fullName === '-' || fullName === '—') return 'Неизвестно';
+            return fullName.replace(/-\s*смарт\s*/i, '-').replace(/-\s*комплекс\s*/i, '-').trim();
+        }
+
         // ================= 3. FIREBASE ИНИЦИАЛИЗАЦИЯ =================
         const configSMT = {
             apiKey: "AIzaSyCofoBIWqUX_P8pQUIKKbitEG2GTbXT7Ak", authDomain: "botstm100.firebaseapp.com",
@@ -613,6 +587,7 @@
         };
         const appSMT = firebase.initializeApp(configSMT, "appSMT");
         const dbSMT = appSMT.database(); const refSMT = dbSMT.ref('bot_installations');
+        const invV2Ref = dbSMT.ref('bot_inventory_batches');
 
         const configPURG = {
             apiKey: "AIzaSyBvo10dq0VkZeBaP-Cv3GVIJfEW23QzKIk", authDomain: "smt-sklad-8f993.firebaseapp.com",
@@ -624,6 +599,7 @@
         let smtList = []; let purgList = [];
         let smtSearchQuery = ''; let purgSearchQuery = '';
         let currentSmtRegion = 'Все';
+        let inventoryBatchesData = {};
 
         // Поиск
         document.getElementById('smtSearch').addEventListener('input', e => { smtSearchQuery = e.target.value.toLowerCase(); renderSmtTable(); });
@@ -634,6 +610,12 @@
             const dot = document.getElementById('connDot'); const txt = document.getElementById('connText');
             if (snap.val() === true) { dot.classList.add('online'); txt.innerText = 'В сети'; txt.style.color = 'var(--accent-cyan)'; }
             else { dot.classList.remove('online'); txt.innerText = 'Офлайн'; txt.style.color = 'var(--text-muted)'; }
+        });
+
+        // Слушатель Динамических Партий со склада
+        invV2Ref.on('value', snap => {
+            inventoryBatchesData = snap.val() || {};
+            renderSmtStats(); 
         });
 
         // ================= 4. ЛОГИКА СМТ С РЕГИОНАЛЬНЫМ ФИЛЬТРОМ И НОВЫМИ ПОЛЯМИ =================
@@ -683,7 +665,7 @@
             if (data) {
                 for (let key in data) {
                     let item = data[key];
-                    item.installer = normalizeName(item.installer); 
+                    item.installer = normalizeName(item.installer);
                     smtList.push({ id: key, ...item });
                 }
             }
@@ -695,29 +677,48 @@
             let filteredList = getRegionFilteredSmt();
             let todayCount = 0; 
             
-            let installedBatch1 = {};
-            let installedBatch2 = {};
+            let dynamicBatches = [];
+            for (let batchId in inventoryBatchesData) {
+                dynamicBatches.push({ id: batchId, ...inventoryBatchesData[batchId] });
+            }
+            // Сортировка партий по Number(order)
+            dynamicBatches.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
 
+            let installedByBatchItem = {};
+            let unknownInstalls = {}; 
+
+            dynamicBatches.forEach(b => {
+                if (b.items) {
+                    for (let itemId in b.items) installedByBatchItem[itemId] = 0;
+                }
+            });
+
+            // Подсчет установок (По всей базе smtList)
             smtList.forEach(item => {
-                if (item.model) {
-                    const match = item.model.match(/G(\d{1,2})/i);
-                    const size = match ? 'G' + match[1] : null;
-                    
-                    if (size) {
-                        let serialStr = item.serial ? String(item.serial).replace(/\D/g, '') : '';
-                        
-                        if (size === 'G6') {
-                            if (serialStr.startsWith('15226')) {
-                                installedBatch2[size] = (installedBatch2[size] || 0) + 1;
-                            } else if (serialStr.startsWith('56225')) {
-                                installedBatch1[size] = (installedBatch1[size] || 0) + 1;
-                            } else {
-                                installedBatch1[size] = (installedBatch1[size] || 0) + 1; 
+                let serialStr = item.serial ? String(item.serial).replace(/\D/g, '') : '';
+                let matched = false;
+
+                for (let b of dynamicBatches) {
+                    if (b.items) {
+                        // Сортировка элементов по Number(order)
+                        let sortedItems = Object.entries(b.items).sort((a, b) => (Number(a[1].order) || 0) - (Number(b[1].order) || 0));
+                        for (let [itemId, iData] of sortedItems) {
+                            let prefix = iData.searchSerial ? String(iData.searchSerial).trim() : '';
+                            // Если есть префикс и он совпадает
+                            if (prefix && serialStr.startsWith(prefix)) {
+                                installedByBatchItem[itemId]++;
+                                matched = true;
+                                break;
                             }
-                        } else {
-                            installedBatch1[size] = (installedBatch1[size] || 0) + 1;
                         }
                     }
+                    if (matched) break;
+                }
+
+                // Если не подошел ни под один префикс партий
+                if (!matched) {
+                    let shortModel = shortenSmtName(item.model);
+                    unknownInstalls[shortModel] = (unknownInstalls[shortModel] || 0) + 1;
                 }
             });
 
@@ -725,57 +726,114 @@
                 if (isToday(parseDate(item.date))) todayCount++;
             });
 
-            function buildRemainderHtml(initials, installed) {
-                let hasData = false;
+            let statsHtml = `
+                <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок (район)</div></div>
+                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showSmtToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня (с 7:00)</div></div>
+            `;
+
+            // Рендер партий
+            dynamicBatches.forEach(b => {
                 let rowsHtml = '';
+                let hasData = false;
+                if (b.items) {
+                    let sortedItems = Object.entries(b.items).sort((a, b) => (Number(a[1].order) || 0) - (Number(b[1].order) || 0));
+                    for (let [itemId, iData] of sortedItems) {
+                        let installed = installedByBatchItem[itemId] || 0;
+                        let warehouse = parseInt(iData.warehouse) || 0;
+                        let base_inst = parseInt(iData.base_installers) || 0;
+                        let offset_inst = parseInt(iData.offset_installed) || 0;
+                        let plan = parseInt(iData.planned) || 0;
+                        
+                        let current_installers = base_inst - (installed - offset_inst);
+                        if (current_installers < 0) current_installers = 0;
 
-                Object.keys(initials).forEach(size => {
-                    let initial = initials[size];
-                    let inst = installed[size] || 0;
-                    let remain = initial - inst;
-                    hasData = true;
-                    
-                    let remainColor = remain < 0 ? 'var(--danger-color)' : 'var(--accent-orange)';
-                    
-                    rowsHtml += `
-                        <tr>
-                            <td style="text-align: left; font-weight: 600; padding: 6px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${size}</td>
-                            <td style="text-align: center; font-weight: 600; color: var(--success-color); padding: 6px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${inst}</td>
-                            <td style="text-align: right; font-weight: 700; color: ${remainColor}; padding: 6px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${remain}</td>
-                        </tr>
-                    `;
-                });
+                        let remain = 0;
+                        let remainStyle = "";
+                        
+                        // ЛОГИКА РАСЧЕТА ОСТАТКА
+                        if (warehouse === 0 && current_installers === 0) {
+                            if (plan === 0 && installed > 0) {
+                                remain = 0;
+                                remainStyle = "color: var(--danger-color); font-weight: bold;";
+                            } else {
+                                remain = plan - installed;
+                            }
+                        } else {
+                            remain = warehouse + current_installers;
+                        }
 
-                let html = `
+                        if (!remainStyle) {
+                            remainStyle = remain < 0 ? "color: var(--danger-color); font-weight: bold;" : "color: var(--accent-orange); font-weight: bold;";
+                        }
+
+                        hasData = true;
+                        let shortName = shortenSmtName(iData.displayName);
+                        
+                        rowsHtml += `
+                            <tr>
+                                <td style="text-align: left; font-weight: 600; padding: 4px 10px 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${shortName}</td>
+                                <td style="text-align: center; font-weight: 600; color: var(--success-color); padding: 4px 10px; border-bottom: 1px dashed rgba(0,0,0,0.06);">${installed}</td>
+                                <td style="text-align: right; padding: 4px 0 4px 10px; border-bottom: 1px dashed rgba(0,0,0,0.06); ${remainStyle}">${remain}</td>
+                            </tr>
+                        `;
+                    }
+                }
+                
+                let tableHtml = hasData ? `
                     <table class="mini-table">
                         <thead>
                             <tr>
-                                <th style="text-align: left;">Тип</th>
-                                <th style="text-align: center;">Уст.</th>
-                                <th style="text-align: right;">Ост.</th>
+                                <th style="text-align: left; padding-right:10px;">Тип</th>
+                                <th style="text-align: center; padding: 0 10px;">Уст.</th>
+                                <th style="text-align: right; padding-left:10px;">Ост.</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                ` : '<div style="color:var(--text-muted); font-size:0.8rem; margin-top: 10px;">Нет данных</div>';
+
+                statsHtml += `
+                    <div class="stat-card" style="justify-content: flex-start; padding-top: 16px;">
+                        <div class="label" style="font-weight:700; margin-bottom:4px; color: var(--text-primary);">${b.name || 'Партия'}</div>
+                        ${tableHtml}
+                    </div>
+                `;
+            });
+
+            // Рендер "Неизвестных" установок
+            let unknownKeys = Object.keys(unknownInstalls).sort();
+            if (unknownKeys.length > 0) {
+                let unknownRowsHtml = '';
+                unknownKeys.forEach(model => {
+                    unknownRowsHtml += `
+                        <tr>
+                            <td style="text-align: left; font-weight: 600; padding: 4px 10px 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${model}</td>
+                            <td style="text-align: right; font-weight: 600; color: var(--success-color); padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${unknownInstalls[model]}</td>
+                        </tr>
+                    `;
+                });
+                
+                let unknownHtml = `
+                    <table class="mini-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; padding-right:10px;">Модель</th>
+                                <th style="text-align: right;">Уст.</th>
+                            </tr>
+                        </thead>
+                        <tbody>${unknownRowsHtml}</tbody>
                     </table>
                 `;
-                
-                return hasData ? html : '<div style="color:var(--text-muted); font-size:0.8rem; margin-top: 10px;">Нет данных</div>';
+
+                statsHtml += `
+                    <div class="stat-card" style="justify-content: flex-start; padding-top: 16px;">
+                        <div class="label" style="font-weight:700; margin-bottom:4px; color: var(--text-primary);">Неизвестные</div>
+                        ${unknownHtml}
+                    </div>
+                `;
             }
 
-            document.getElementById('smtStatsGrid').innerHTML = `
-                <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок (район)</div></div>
-                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showSmtToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня (с 7:00)</div></div>
-                <div class="stat-card" style="justify-content: flex-start; padding-top: 16px;">
-                    <div class="label" style="font-weight:700; margin-bottom:4px; color: var(--text-primary);">Остаток 1-й партии (608)</div>
-                    ${buildRemainderHtml(BATCH_1_INITIAL, installedBatch1)}
-                </div>
-                <div class="stat-card" style="justify-content: flex-start; padding-top: 16px;">
-                    <div class="label" style="font-weight:700; margin-bottom:4px; color: var(--text-primary);">Остаток 2-й партии (1775)</div>
-                    ${buildRemainderHtml(BATCH_2_INITIAL, installedBatch2)}
-                </div>
-            `;
+            document.getElementById('smtStatsGrid').innerHTML = statsHtml;
         }
 
         function renderSmtSummary() {
@@ -840,10 +898,25 @@
             records.forEach(r => { const d = r.date ? r.date.split(',')[0] : 'Без даты'; if (!byDay[d]) byDay[d] = []; byDay[d].push(r); });
             let html = '';
             Object.keys(byDay).sort((a,b) => parseDate(b+',00:00') - parseDate(a+',00:00')).forEach(day => {
-                html += `<div class="day-group"><div class="day-title">${day} (${byDay[day].length} шт.)</div>`;
+                html += `
+                <div class="day-group">
+                    <div class="day-title">${day} (${byDay[day].length} шт.)</div>
+                `;
                 byDay[day].forEach(r => {
                     const time = r.date && r.date.includes(',') ? r.date.split(',')[1].trim() : '';
-                    html += `<div class="record-item"><div class="record-main"><span class="model">${r.model||'—'} (№${r.serial||'—'})</span><span class="serial">${r.installer||'—'}</span></div><div class="record-meta"><div class="time">${time}</div><div style="font-size:0.75rem;color:#64748b;">${r.objectName||''}</div></div></div>`;
+                    let modelAndSerial = `${r.model || '—'} (№${r.serial || '—'})`;
+                    html += `
+                        <div class="record-item">
+                            <div class="record-main">
+                                <span class="model">${modelAndSerial}</span>
+                                <span class="serial">${r.installer || '—'}</span>
+                            </div>
+                            <div class="record-meta">
+                                <div class="time">${time}</div>
+                                <div class="object-name">${r.objectName || ''}</div>
+                            </div>
+                        </div>
+                    `;
                 });
                 html += `</div>`;
             });
@@ -854,13 +927,13 @@
         function showSmtToday() { buildSmtModalList(getRegionFilteredSmt().filter(i => isToday(parseDate(i.date))), `Установлено сегодня`); }
         function showSmtInstaller(inst) { buildSmtModalList(getRegionFilteredSmt().filter(i => i.installer === inst), `СМТ: ${inst}`); }
 
-        // ================= 5. ЛОГИКА ТО ПУРГ (Детальная аналитика) =================
+        // ================= 5. ЛОГИКА ТО ПУРГ =================
         refPURG.on('value', snap => {
             const data = snap.val(); purgList = [];
             if (data) {
                 for (let key in data) {
                     let item = data[key];
-                    item.installer = normalizeName(item.installer); // Применяем нормализацию к ПУРГ
+                    item.installer = normalizeName(item.installer);
                     purgList.push({ id: key, ...item });
                 }
             }
@@ -868,7 +941,6 @@
             renderPurgStats(); renderPurgSummary(); renderPurgTable();
         });
 
-        // Импорт из Excel
         function importPurgExcel(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -922,7 +994,6 @@
             e.target.value = "";
         }
 
-        // Надежный поиск ошибок в ручном тексте
         function isCommentError(text) {
             if (!text) return false;
             let cleanT = text.toLowerCase().replace(/(нет|отсутствует)\s*(утечек|утечки|проблем|повреждений)/g, '');
@@ -931,7 +1002,6 @@
             return errWords.some(w => cleanT.includes(w));
         }
 
-        // Парсер ТО ПУРГ (с учетом новых и старых записей Заземления)
         function getPurgColumns(item) {
             const s = item.selections || {}; const c = item.comments || {}; const ch = item.checkboxes || {};
             
@@ -983,7 +1053,6 @@
                     }
                 }
 
-                // Логирование ОШИБОК и перезапись названия бейджика
                 if (isErr) {
                     short = "ОШИБКА";
 
@@ -1051,9 +1120,9 @@
             let topHtml = topErrors.length ? topErrors.map(e => `<div class="top-error-item"><span class="error-name">${e[0]}</span><span class="error-count">${e[1]}</span></div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Проблем нет 🎉</div>';
 
             document.getElementById('purgStatsGrid').innerHTML = `
-                <div class="stat-card accent-blue" style="justify-content: center;"><div class="icon">🏭</div><div class="number">${purgList.length}</div><div class="label">Всего ТО ПУРГ</div></div>
-                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showPurgToday()"><div class="icon">📅</div><div class="number">${today}</div><div class="label">ТО за сегодня</div></div>
-                <div class="stat-card" style="justify-content: flex-start; padding-top:16px;"><div class="label" style="font-weight:700; color:var(--text-primary);">🔥 Частые проблемы:</div><div class="top-errors-list" style="margin-top:12px;">${topHtml}</div></div>
+                <div class="stat-card accent-blue"><div class="icon">🏭</div><div class="number">${purgList.length}</div><div class="label">Всего ТО ПУРГ</div></div>
+                <div class="stat-card accent-green clickable" onclick="showPurgToday()"><div class="icon">📅</div><div class="number">${today}</div><div class="label">ТО за сегодня</div></div>
+                <div class="stat-card" style="align-items:flex-start; padding:16px 20px;"><div class="label" style="font-weight:700; color:var(--text-primary);">🔥 Частые проблемы:</div><div class="top-errors-list">${topHtml}</div></div>
             `;
         }
 
