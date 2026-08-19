@@ -367,6 +367,8 @@
                 <button class="region-btn" onclick="setSmtRegion('Грозный', this)">Грозный и р-н</button>
                 <button class="region-btn" onclick="setSmtRegion('Гудермес', this)">Гудермес и р-н</button>
                 <button class="region-btn" onclick="setSmtRegion('Курчалой', this)">Курчалой и р-н</button>
+                <button class="region-btn" onclick="setSmtRegion('Шали', this)">Шали и р-н</button>
+                <button class="region-btn" onclick="setSmtRegion('Урус-Мартан', this)">Урус-Мартан и р-н</button>
                 <button class="region-btn" onclick="setSmtRegion('Другие', this)">Остальные</button>
             </div>
 
@@ -625,6 +627,8 @@
                 if (c.includes('грозный')) return 'Грозный';
                 if (c.includes('гудермес')) return 'Гудермес';
                 if (c.includes('курчалой')) return 'Курчалой';
+                if (c.includes('шали')) return 'Шали';
+                if (c.includes('урус-мартан')) return 'Урус-Мартан';
             }
             
             const addr = ((item.address || '') + ' ' + (item.objectName || '')).toLowerCase();
@@ -633,15 +637,21 @@
             if (addr.includes('курчалоевск') || addr.includes('г. курчалой') || addr.includes('г.курчалой')) return 'Курчалой';
             if (addr.includes('грозненский р-н') || addr.includes('грозненский район')) return 'Грозный';
             if (addr.includes('г. грозный') || addr.includes('г.грозный') || addr.includes('город грозный')) return 'Грозный';
+            if (addr.includes('шалинск') || addr.includes('г. шали') || addr.includes('г.шали') || addr.includes('город шали')) return 'Шали';
+            if (addr.includes('урус-мартановск') || addr.includes('г. урус-мартан') || addr.includes('г.урус-мартан') || addr.includes('город урус-мартан')) return 'Урус-Мартан';
 
             if (addr.includes('ойсхар') || addr.includes('илласхан') || addr.includes('кошкельд') || addr.includes('энгель-юрт') || addr.includes('мелчхи') || addr.includes('ишхой-юрт') || addr.includes('джалка') || addr.includes('энгеной') || addr.includes('гордали') || addr.includes('шуани') || addr.includes('комсомольск') || addr.includes('брагуны') || addr.includes('хангиш-юрт') || addr.includes('азамат-юрт') || addr.includes('кади-юрт') || addr.includes('бильтой')) return 'Гудермес';
             if (addr.includes('гелдах') || addr.includes('цаци-юрт') || addr.includes('бачи-юрт') || addr.includes('майртуп') || addr.includes('джугурт') || addr.includes('центорой') || addr.includes('ахмат-юрт') || addr.includes('аллерой') || addr.includes('ахкинчу') || addr.includes('хиди-хутор') || addr.includes('регита')) return 'Курчалой';
+            if (addr.includes('сержень-юрт') || addr.includes('герменчук') || addr.includes('мескер-юрт') || addr.includes('агишты') || addr.includes('белгатой') || addr.includes('новые атаги') || addr.includes('чечен-аул') || addr.includes('дуба-юрт') || addr.includes('чири-юрт')) return 'Шали';
+            if (addr.includes('гойты') || addr.includes('алхазурово') || addr.includes('гехи') || addr.includes('рошни-чу') || addr.includes('шалажи') || addr.includes('мартан-чу') || addr.includes('гойтинск')) return 'Урус-Мартан';
 
-            let safeAddr = addr.replace(/грозненск\S*/g, '').replace(/гудермесск\S*/g, '').replace(/курчалоевск\S*/g, '');
+            let safeAddr = addr.replace(/грозненск\S*/g, '').replace(/гудермесск\S*/g, '').replace(/курчалоевск\S*/g, '').replace(/шалинск\S*/g, '').replace(/урус-мартановск\S*/g, '');
             
             if (safeAddr.includes('гудермес')) return 'Гудермес';
             if (safeAddr.includes('курчало')) return 'Курчалой';
             if (safeAddr.includes('грозн')) return 'Грозный';
+            if (safeAddr.includes('шали')) return 'Шали';
+            if (safeAddr.includes('урус-мартан')) return 'Урус-Мартан';
             
             return 'Другие';
         }
