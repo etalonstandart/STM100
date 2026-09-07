@@ -98,7 +98,7 @@
             100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
         }
 
-        /* ===== Навигация главная (СМТ / ПУРГ) ===== */
+        /* ===== Навигация главная (Население / СМТ / ПУРГ) ===== */
         .main-nav { display: flex; gap: 24px; }
         .main-tab-btn {
             background: none; border: none; color: var(--text-muted);
@@ -117,7 +117,7 @@
         }
         .sub-tab-btn.active { background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 2px 6px rgba(0,0,0,0.05); font-weight: 600; }
 
-        /* ===== Региональный Фильтр СМТ ===== */
+        /* ===== Региональный Фильтр ===== */
         .region-filter {
             display: flex; justify-content: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;
         }
@@ -328,7 +328,7 @@
             .table-toolbar { flex-direction: column; align-items: stretch; }
             .search-box { max-width: 100%; }
             th, td { padding: 8px 10px; font-size: 0.75rem; }
-            .main-nav { justify-content: center; }
+            .main-nav { justify-content: center; flex-wrap: wrap; }
             .btn-group { width: 100%; justify-content: space-between; }
             .breakout-table { width: 100vw; }
         }
@@ -347,13 +347,84 @@
             </div>
             <!-- ГЛАВНАЯ НАВИГАЦИЯ -->
             <nav class="main-nav">
-                <button class="main-tab-btn active" data-target="smtContainer">СМТ</button>
+                <button class="main-tab-btn active" data-target="homeContainer">Население</button>
+                <button class="main-tab-btn" data-target="smtContainer">СМТ</button>
                 <button class="main-tab-btn" data-target="purgContainer">ТО ПУРГ</button>
             </nav>
         </header>
 
-        <!-- ================= БЛОК СМТ ================= -->
-        <div id="smtContainer" class="main-tab-content active">
+        <!-- ================= БЛОК НАСЕЛЕНИЕ (ЧАСТНЫЕ ДОМА) ================= -->
+        <div id="homeContainer" class="main-tab-content active">
+            <div class="sub-nav-container">
+                <div class="sub-nav">
+                    <button class="sub-tab-btn active" data-target="homeSummary">Сводка</button>
+                    <button class="sub-tab-btn" data-target="homeFullTable">Таблица</button>
+                </div>
+            </div>
+
+            <!-- РЕГИОНАЛЬНЫЙ ФИЛЬТР НАСЕЛЕНИЕ -->
+            <div class="region-filter" id="homeRegionFilter">
+                <button class="region-btn active" onclick="setHomeRegion('Все', this)">Все районы</button>
+                <button class="region-btn" onclick="setHomeRegion('Грозный', this)">Грозный и р-н</button>
+                <button class="region-btn" onclick="setHomeRegion('Гудермес', this)">Гудермес и р-н</button>
+                <button class="region-btn" onclick="setHomeRegion('Курчалой', this)">Курчалой и р-н</button>
+                <button class="region-btn" onclick="setHomeRegion('Шали', this)">Шали и р-н</button>
+                <button class="region-btn" onclick="setHomeRegion('Урус-Мартан', this)">Урус-Мартан и р-н</button>
+                <button class="region-btn" onclick="setHomeRegion('Другие', this)">Остальные</button>
+            </div>
+
+            <!-- НАСЕЛЕНИЕ Сводка -->
+            <div id="homeSummary" class="sub-tab-content active">
+                <div class="stats-grid" id="homeStatsGrid"></div>
+                <div class="table-container">
+                    <div class="table-responsive" style="min-width: 100%; min-width: unset;">
+                        <table style="min-width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Имя монтажника</th>
+                                    <th style="text-align:center;">Установки</th>
+                                    <th style="text-align:right;">Детально</th>
+                                </tr>
+                            </thead>
+                            <tbody id="homeSummaryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- НАСЕЛЕНИЕ Таблица (РАСШИРЕННАЯ) -->
+            <div id="homeFullTable" class="sub-tab-content">
+                <div class="table-container breakout-table">
+                    <div class="table-toolbar">
+                        <div class="search-box">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <input type="text" id="homeSearch" placeholder="Поиск по Населению...">
+                        </div>
+                        <button class="export-btn" onclick="exportHomeToExcel()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                            Выгрузить в XLSX
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Монтажник</th><th>Объект</th><th>Адрес</th><th>Расположение</th>
+                                    <th>Мощн.</th><th>Модель</th><th>№</th><th>Пломба</th>
+                                    <th>Ст. модель</th><th>Ст. №</th><th>Ст. показ.</th><th>Направл.</th>
+                                    <th>SIM</th><th>Дата</th><th>Комментарий</th>
+                                </tr>
+                            </thead>
+                            <tbody id="homeFullTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= БЛОК СМТ (КОММЕРЦИЯ) ================= -->
+        <div id="smtContainer" class="main-tab-content">
             <div class="sub-nav-container">
                 <div class="sub-nav">
                     <button class="sub-tab-btn active" data-target="smtSummary">Сводка</button>
@@ -598,13 +669,14 @@
         const appPURG = firebase.initializeApp(configPURG, "appPURG");
         const dbPURG = appPURG.database(); const refPURG = dbPURG.ref('purg_reports');
 
-        let smtList = []; let purgList = [];
-        let smtSearchQuery = ''; let purgSearchQuery = '';
-        let currentSmtRegion = 'Все';
+        let smtList = []; let homeList = []; let purgList = [];
+        let smtSearchQuery = ''; let homeSearchQuery = ''; let purgSearchQuery = '';
+        let currentSmtRegion = 'Все'; let currentHomeRegion = 'Все';
         let inventoryBatchesData = {};
 
         // Поиск
         document.getElementById('smtSearch').addEventListener('input', e => { smtSearchQuery = e.target.value.toLowerCase(); renderSmtTable(); });
+        document.getElementById('homeSearch').addEventListener('input', e => { homeSearchQuery = e.target.value.toLowerCase(); renderHomeTable(); });
         document.getElementById('purgSearch').addEventListener('input', e => { purgSearchQuery = e.target.value.toLowerCase(); renderPurgTable(); });
 
         // Статус сети
@@ -617,11 +689,12 @@
         // Слушатель Динамических Партий со склада
         invV2Ref.on('value', snap => {
             inventoryBatchesData = snap.val() || {};
-            renderSmtStats(); 
+            renderSmtStats();
+            renderHomeStats(); 
         });
 
-        // ================= 4. ЛОГИКА СМТ С РЕГИОНАЛЬНЫМ ФИЛЬТРОМ И НОВЫМИ ПОЛЯМИ =================
-        function getSmtRegion(item) {
+        // ================= 4. ОБЩАЯ ЛОГИКА РЕГИОНОВ =================
+        function getRegion(item) {
             if (item.city) {
                 const c = item.city.trim().toLowerCase();
                 if (c.includes('грозный')) return 'Грозный';
@@ -656,6 +729,142 @@
             return 'Другие';
         }
 
+        // ================= 5. РАЗДЕЛЕНИЕ БАЗЫ: СМТ и НАСЕЛЕНИЕ =================
+        refSMT.on('value', snap => {
+            const data = snap.val(); 
+            smtList = []; 
+            homeList = [];
+
+            if (data) {
+                for (let key in data) {
+                    let item = data[key];
+                    item.installer = normalizeName(item.installer);
+                    item.id = key;
+
+                    if (item.objectName && item.objectName.toLowerCase().includes('частный дом')) {
+                        homeList.push(item);
+                    } else {
+                        smtList.push(item);
+                    }
+                }
+            }
+            smtList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+            homeList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+
+            renderSmtStats(); renderSmtSummary(); renderSmtTable();
+            renderHomeStats(); renderHomeSummary(); renderHomeTable();
+        });
+
+        // ================= 6. ЛОГИКА ВКЛАДКИ НАСЕЛЕНИЕ =================
+        function setHomeRegion(region, btnElement) {
+            currentHomeRegion = region;
+            document.querySelectorAll('#homeRegionFilter .region-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            renderHomeStats(); renderHomeSummary(); renderHomeTable();
+        }
+
+        function getRegionFilteredHome() {
+            if (currentHomeRegion === 'Все') return homeList;
+            return homeList.filter(item => getRegion(item) === currentHomeRegion);
+        }
+
+        function renderHomeStats() {
+            let filteredList = getRegionFilteredHome();
+            let todayCount = 0; 
+            let installerCounts = {};
+
+            filteredList.forEach(item => {
+                if (isToday(parseDate(item.date))) todayCount++;
+                
+                let instName = item.installer || 'Неизвестно';
+                if (instName !== '-' && instName !== '—') {
+                    installerCounts[instName] = (installerCounts[instName] || 0) + 1;
+                }
+            });
+
+            // Топ-3 монтажника
+            let topInstallers = Object.entries(installerCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3);
+                
+            let topHtml = topInstallers.length ? topInstallers.map(e => `
+                <div class="top-error-item">
+                    <span class="error-name" style="color:var(--text-primary); font-weight: 500;">${e[0]}</span>
+                    <span class="error-count" style="color: var(--success-color); background: #ecfdf5;">${e[1]}</span>
+                </div>
+            `).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Нет данных</div>';
+
+            let statsHtml = `
+                <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок (район)</div></div>
+                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showHomeToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня (с 7:00)</div></div>
+                <div class="stat-card" style="align-items:flex-start; padding:16px 20px;"><div class="label" style="font-weight:700; color:var(--text-primary);">🏆 Топ-3 монтажника:</div><div class="top-errors-list" style="margin-top:12px;">${topHtml}</div></div>
+            `;
+
+            document.getElementById('homeStatsGrid').innerHTML = statsHtml;
+        }
+
+        function renderHomeSummary() {
+            let list = getRegionFilteredHome();
+            const stats = {};
+            list.forEach(item => { const inst = item.installer; stats[inst] = (stats[inst] || 0) + 1; });
+            const html = Object.keys(stats).sort().map(inst => `
+                <tr>
+                    <td><span class="installer-name">${inst}</span></td>
+                    <td style="text-align:center;"><span class="bold-text">${stats[inst]}</span></td>
+                    <td style="text-align:right;"><button class="action-btn" onclick="showHomeInstaller('${inst}')">Детали</button></td>
+                </tr>
+            `).join('');
+            document.getElementById('homeSummaryTableBody').innerHTML = html || `<tr><td colspan="3" style="text-align:center;">Нет данных</td></tr>`;
+        }
+
+        function renderHomeTable() {
+            let list = getRegionFilteredHome();
+            const filtered = list.filter(i => {
+                const s = `${i.installer} ${i.objectName} ${i.address} ${i.model} ${i.serial} ${i.comment||''} ${i.city||''}`.toLowerCase();
+                return s.includes(homeSearchQuery);
+            });
+            const html = filtered.map(item => `
+                <tr>
+                    <td class="bold-text">${item.installer || '-'}</td>
+                    <td class="bold-text">${item.objectName || '-'}</td>
+                    <td>${item.address || '-'}<br><span class="sub-text">${item.city || ''}</span></td>
+                    <td>${item.uirgLocation || '-'}</td>
+                    <td>${item.totalPower || '-'}</td>
+                    <td>${item.model || '-'}</td>
+                    <td>${item.serial || '-'}</td>
+                    <td>${item.controllerSeal || '-'}</td>
+                    <td>${item.oldMeterModel || '-'}</td>
+                    <td>${item.oldMeterSerial || '-'}</td>
+                    <td>${item.oldMeterReadings || '-'}</td>
+                    <td>${item.newGasDirection || '-'}</td>
+                    <td>${item.simCardNumber || '-'}</td>
+                    <td>${item.date || '-'}</td>
+                    <td>${item.comment || '-'}</td>
+                </tr>
+            `).join('');
+            document.getElementById('homeFullTableBody').innerHTML = html || `<tr><td colspan="15" style="text-align:center;">Ничего не найдено</td></tr>`;
+        }
+
+        function exportHomeToExcel() {
+            let list = getRegionFilteredHome();
+            if (!list.length) return;
+            const hdrs = ['Монтажник', 'Объект', 'Город', 'Адрес', 'Расположение', 'Мощн.', 'Модель', '№', 'Пломба', 'Ст. модель', 'Ст. №', 'Ст. показ.', 'Направл.', 'SIM', 'Дата', 'Комментарий'];
+            const data = [hdrs];
+            list.forEach(item => {
+                data.push([item.installer, item.objectName, item.city || '', item.address, item.uirgLocation, item.totalPower, item.model, item.serial, item.controllerSeal, item.oldMeterModel, item.oldMeterSerial, item.oldMeterReadings, item.newGasDirection, item.simCardNumber, item.date, item.comment || '']);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Население");
+            let rName = currentHomeRegion === 'Все' ? 'Все' : currentHomeRegion;
+            XLSX.writeFile(wb, `Население_${rName}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function showHomeToday() { buildSmtModalList(getRegionFilteredHome().filter(i => isToday(parseDate(i.date))), `Установлено сегодня (Население)`); }
+        function showHomeInstaller(inst) { buildSmtModalList(getRegionFilteredHome().filter(i => i.installer === inst), `Население: ${inst}`); }
+
+
+        // ================= 7. ЛОГИКА СМТ С РЕГИОНАЛЬНЫМ ФИЛЬТРОМ =================
         function setSmtRegion(region, btnElement) {
             currentSmtRegion = region;
             document.querySelectorAll('#smtRegionFilter .region-btn').forEach(b => b.classList.remove('active'));
@@ -667,21 +876,8 @@
 
         function getRegionFilteredSmt() {
             if (currentSmtRegion === 'Все') return smtList;
-            return smtList.filter(item => getSmtRegion(item) === currentSmtRegion);
+            return smtList.filter(item => getRegion(item) === currentSmtRegion);
         }
-
-        refSMT.on('value', snap => {
-            const data = snap.val(); smtList = [];
-            if (data) {
-                for (let key in data) {
-                    let item = data[key];
-                    item.installer = normalizeName(item.installer);
-                    smtList.push({ id: key, ...item });
-                }
-            }
-            smtList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-            renderSmtStats(); renderSmtSummary(); renderSmtTable();
-        });
 
         function renderSmtStats() {
             let filteredList = getRegionFilteredSmt();
@@ -691,7 +887,6 @@
             for (let batchId in inventoryBatchesData) {
                 dynamicBatches.push({ id: batchId, ...inventoryBatchesData[batchId] });
             }
-            // Сортировка партий по Number(order)
             dynamicBatches.sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0));
 
             let installedByBatchItem = {};
@@ -703,18 +898,16 @@
                 }
             });
 
-            // Подсчет установок (По всей базе smtList)
+            // Подсчет установок только для базы СМТ
             smtList.forEach(item => {
                 let serialStr = item.serial ? String(item.serial).replace(/\D/g, '') : '';
                 let matched = false;
 
                 for (let b of dynamicBatches) {
                     if (b.items) {
-                        // Сортировка элементов по Number(order)
                         let sortedItems = Object.entries(b.items).sort((a, b) => (Number(a[1].order) || 0) - (Number(b[1].order) || 0));
                         for (let [itemId, iData] of sortedItems) {
                             let prefix = iData.searchSerial ? String(iData.searchSerial).trim() : '';
-                            // Если есть префикс и он совпадает
                             if (prefix && serialStr.startsWith(prefix)) {
                                 installedByBatchItem[itemId]++;
                                 matched = true;
@@ -725,7 +918,6 @@
                     if (matched) break;
                 }
 
-                // Если не подошел ни под один префикс партий
                 if (!matched) {
                     let shortModel = shortenSmtName(item.model);
                     unknownInstalls[shortModel] = (unknownInstalls[shortModel] || 0) + 1;
@@ -741,7 +933,6 @@
                 <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showSmtToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня (с 7:00)</div></div>
             `;
 
-            // Рендер партий
             dynamicBatches.forEach(b => {
                 let rowsHtml = '';
                 let hasData = false;
@@ -760,7 +951,6 @@
                         let remain = 0;
                         let remainStyle = "";
                         
-                        // ЛОГИКА РАСЧЕТА ОСТАТКА
                         if (warehouse === 0 && current_installers === 0) {
                             if (plan === 0 && installed > 0) {
                                 remain = 0;
@@ -810,7 +1000,6 @@
                 `;
             });
 
-            // Рендер "Неизвестных" установок
             let unknownKeys = Object.keys(unknownInstalls).sort();
             if (unknownKeys.length > 0) {
                 let unknownRowsHtml = '';
@@ -903,6 +1092,7 @@
             XLSX.writeFile(wb, `СМТ_${rName}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
+        // Общая функция для модальных окон (СМТ и Население)
         function buildSmtModalList(records, title) {
             const byDay = {};
             records.forEach(r => { const d = r.date ? r.date.split(',')[0] : 'Без даты'; if (!byDay[d]) byDay[d] = []; byDay[d].push(r); });
@@ -934,10 +1124,12 @@
             document.getElementById('detailsBody').innerHTML = html || '<div class="empty-state">Нет данных</div>';
             openModal('detailsModal');
         }
-        function showSmtToday() { buildSmtModalList(getRegionFilteredSmt().filter(i => isToday(parseDate(i.date))), `Установлено сегодня`); }
+
+        function showSmtToday() { buildSmtModalList(getRegionFilteredSmt().filter(i => isToday(parseDate(i.date))), `Установлено сегодня (СМТ)`); }
         function showSmtInstaller(inst) { buildSmtModalList(getRegionFilteredSmt().filter(i => i.installer === inst), `СМТ: ${inst}`); }
 
-        // ================= 5. ЛОГИКА ТО ПУРГ =================
+
+        // ================= 8. ЛОГИКА ТО ПУРГ =================
         refPURG.on('value', snap => {
             const data = snap.val(); purgList = [];
             if (data) {
