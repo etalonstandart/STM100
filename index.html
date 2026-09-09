@@ -117,6 +117,52 @@
         }
         .sub-tab-btn.active { background: var(--bg-secondary); color: var(--text-primary); box-shadow: 0 2px 6px rgba(0,0,0,0.05); font-weight: 600; }
 
+        /* ===== Выпадающая таблица населенных пунктов (DROPDOWN) ===== */
+        .settlement-dropdown-wrapper {
+            display: flex; justify-content: center; margin-bottom: 14px; padding: 0 10px; position: relative;
+        }
+        .settlement-dropdown-btn {
+            width: 100%; max-width: 450px; padding: 12px 20px; border-radius: 12px;
+            border: 1px solid var(--glass-border); background: var(--bg-secondary);
+            font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 500; color: var(--text-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .settlement-dropdown-btn:hover { border-color: #cbd5e1; }
+        .settlement-dropdown-btn.active { border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
+        .settlement-dropdown-btn svg { width: 16px; height: 16px; color: var(--text-muted); transition: transform 0.2s; }
+        .settlement-dropdown-btn.active svg { transform: rotate(180deg); }
+
+        .settlement-dropdown-menu {
+            display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 450px; background: var(--bg-secondary); border: 1px solid var(--glass-border);
+            border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 100;
+            max-height: 350px; overflow-y: auto; margin-top: 6px; padding: 6px 0;
+            animation: fadeInDrop 0.2s ease;
+        }
+        @keyframes fadeInDrop { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        .settlement-dropdown-menu.active { display: block; }
+        
+        .settlement-menu-header {
+            display: flex; justify-content: flex-end; padding: 4px 20px 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.7rem; font-weight: 600;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .settlement-menu-header div { width: 45px; text-align: right; }
+
+        .settlement-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 20px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.03);
+            transition: background 0.2s;
+        }
+        .settlement-item:last-child { border-bottom: none; }
+        .settlement-item:hover { background: #f8fafc; }
+        .settlement-item.selected { background: rgba(2, 132, 199, 0.08); }
+        .set-name { font-weight: 500; color: var(--text-primary); font-size: 0.9rem; flex: 1; }
+        .set-stats { display: flex; gap: 12px; font-size: 0.8rem; align-items: center;}
+        .set-total { color: var(--text-secondary); }
+        .set-today { color: var(--success-color); font-weight: 600; width: 35px; text-align: right;}
+
         /* ===== Региональный Фильтр ===== */
         .region-filter {
             display: flex; justify-content: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap;
@@ -362,6 +408,17 @@
                 </div>
             </div>
 
+            <!-- ВЫПАДАЮЩАЯ ТАБЛИЦА НАСЕЛЕННЫХ ПУНКТОВ -->
+            <div class="settlement-dropdown-wrapper">
+                <div class="settlement-dropdown-btn" id="homeSettlementBtn" onclick="toggleDropdown('home')">
+                    <span id="homeSettlementText">Все населенные пункты</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="settlement-dropdown-menu" id="homeSettlementMenu">
+                    <!-- Заполняется JS -->
+                </div>
+            </div>
+
             <!-- РЕГИОНАЛЬНЫЙ ФИЛЬТР НАСЕЛЕНИЕ -->
             <div class="region-filter" id="homeRegionFilter">
                 <button class="region-btn active" onclick="setHomeRegion('Все', this)">Все районы</button>
@@ -429,6 +486,17 @@
                 <div class="sub-nav">
                     <button class="sub-tab-btn active" data-target="smtSummary">Сводка</button>
                     <button class="sub-tab-btn" data-target="smtFullTable">Таблица</button>
+                </div>
+            </div>
+
+            <!-- ВЫПАДАЮЩАЯ ТАБЛИЦА НАСЕЛЕННЫХ ПУНКТОВ -->
+            <div class="settlement-dropdown-wrapper">
+                <div class="settlement-dropdown-btn" id="smtSettlementBtn" onclick="toggleDropdown('smt')">
+                    <span id="smtSettlementText">Все населенные пункты</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="settlement-dropdown-menu" id="smtSettlementMenu">
+                    <!-- Заполняется JS -->
                 </div>
             </div>
 
@@ -623,17 +691,35 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         document.querySelectorAll('.modal-overlay').forEach(el => { el.addEventListener('click', (e) => { if (e.target === el) closeModal(el.id); }); });
 
-        // Утилиты дат
         function parseDate(str) {
             if (!str) return null;
-            const p = str.split(','); if (p.length < 2) return null;
-            const d = p[0].trim().split('.'); const t = p[1].trim().split(':');
+            const p = str.split(','); if (p.length < 2) {
+                const d = p[0].trim().split('.');
+                if(d.length !== 3) return null;
+                return new Date(d[2], d[1]-1, d[0], 0, 0); 
+            }
+            
+            let datePart = p[0].trim();
+            let timePart = p[p.length - 1].trim(); 
+            
+            if (!timePart.includes(':')) {
+                timePart = "00:00"; 
+            }
+
+            const d = datePart.split('.'); 
+            const t = timePart.split(':');
+            
+            if (d.length !== 3) return null;
+            
             return new Date(d[2], d[1]-1, d[0], t[0], t[1]);
         }
+        
         function isToday(dateObj) {
             if (!dateObj) return false;
-            const now = new Date(); const todayStart = new Date(now); todayStart.setHours(7, 0, 0, 0);
-            return dateObj >= todayStart;
+            const now = new Date();
+            return dateObj.getFullYear() === now.getFullYear() &&
+                   dateObj.getMonth() === now.getMonth() &&
+                   dateObj.getDate() === now.getDate();
         }
 
         // ================= УНИФИКАЦИЯ ИМЕН И НАЗВАНИЙ =================
@@ -652,6 +738,108 @@
             if (!fullName || fullName === '-' || fullName === '—') return 'Неизвестно';
             return fullName.replace(/-\s*смарт\s*/i, '-').replace(/-\s*комплекс\s*/i, '-').trim();
         }
+
+        // ================= СЛОВАРЬ ПАТТЕРНОВ НАСЕЛЕННЫХ ПУНКТОВ =================
+        const SETTLEMENT_PATTERNS = {
+            'Грозный': ['г.грозный', 'грозный', 'г. грозный'],
+            'Гудермес': ['город гудермес', 'г. гудермес', 'г.гудермес', 'гудермес'],
+            'Курчалой': ['город курчалой', 'г курчалой', 'г.. курчалой', 'с. курчалой', 'с.курчалой', 'курчалой'],
+            'Шали': ['г. шали', 'шали'],
+            'Ойсхара': ['пгт. ойсхара', 'г.. ойсхара', 'г. ойсхара', 'ойсхар', 'ойсхара'],
+            'Чири-Юрт': ['п. чири-юрт', 'чири-юрт', 'чири юрт'],
+            'Автуры': ['с. автуры', 'автуры', 'с автуры', 'село автуры'],
+            'Азамат-Юрт': ['с. азамат-юрт', 'азамат-юрт', 'азамат юрт'],
+            'Аллерой': ['с. аллерой', 'аллерой'],
+            'Ахкинчу-Барзой': ['с. ахкинчу-барзой', 'ахкинчу-барзой', 'ахкинчу барзой'],
+            'Ахмат-Юрт': ['село ахмат-юрт', 'село ахмат- юрт', 'с. ахмат-юрт', 'ахмат-юрт'],
+            'Ачерешки': ['с. ачерешки', 'ачерешки'],
+            'Бачи-Юрт': ['село бачи-юрт', 'бачи-юрт', 'с. бачи-юрт'],
+            'Бельты': ['с. бельты', 'бельты'],
+            'Бильтой-Юрт': ['с. бильтой-юрт', 'бильтой-юрт'],
+            'Брагуны': ['с. брагуны', 'брагуны'],
+            'Верхний Герзель': ['с. верхний герзель', 'верхний герзель'],
+            'Верхний Нойбер': ['с. верхний-нойбер', 'верхний-нойбер', 'верхний нойбер'],
+            'Галанчож': ['с.галанчож', 'галанчож'],
+            'Гелдаган': ['село гелдаган', 'гелдаган', 'с. гелдаган'],
+            'Герзель-Аул': ['с. герзель-аул', 'герзель-аул'],
+            'Герменчук': ['с. герменчук', 'герменчук'],
+            'Гордали-Юрт': ['с. гордали-юрт', 'гордали-юрт'],
+            'Дарбанхи': ['с. дарбанхи', 'дарбанхи'],
+            'Джагларги': ['с джагларги', 'с. джагларги', 'с.джагларги', 'село джагларги', 'джагларги', 'с.джаларги', 'джаглари', 'с.джаларгы'],
+            'Джалка': ['с. джалка', 'джалка'],
+            'Джугурты': ['джугурты', 'с джугурты', 'с.джугурты', 'с. джугурты', 'село джугурты', 'с. джугурды', 'джугурды', 'с джугурды', 'с. джугурда', 'джугкрды', 'джа гурты', 'с.жугурты', 'село жугурды', 'село жугурты', 'с.джигурта'],
+            'Дуба-Юрт': ['с. дуба-юрт', 'дуба-юрт'],
+            'Илсхан-Юрт': ['село илсхан-юрт', 'с. илсхан-юрт', 'с.илсхан-юрт', 'илсхан-юрт'],
+            'Ишхой-Юрт': ['с. ишхой-юрт', 'ишхой-юрт'],
+            'Кади-Юрт': ['с. кади-юрт', 'кади-юрт'],
+            'Комсомольское': ['с. комсомольское', 'комсомольское'],
+            'Корен-Беной': ['с. корен-беной', 'корен-беной'],
+            'Кошкельды': ['село кошкельды', 'с. кошкельды', 'кошкельды'],
+            'Майртуп': ['майртуп', 'с. майртуп'],
+            'Марзой-Мохк': ['с. марзой-мохк', 'марзой-мохк'],
+            'Мелчхи': ['с. мелчхи', 'мелчхи'],
+            'Мескер-Юрт': ['с. мескер-юрт', 'мескер-юрт'],
+            'Нижний Герзель': ['с. нижний герзель', 'нижний герзель'],
+            'Нижний Нойбер': ['с. нижний-нойбер', 'нижний-нойбер', 'нижний нойбер', 'село нижний найбёр'],
+            'Ники-Хита': ['с. ники-хита', 'ники-хита'],
+            'Новые Атаги': ['с. новые-атаги', 'новые атаги', 'новые-атаги'],
+            'Новый Беной': ['с. новый-беной', 'новый беной', 'новый-беной'],
+            'Новый Энгеной': ['с. новый энгеной', 'новый энгеной'],
+            'Регита': ['с. регита', 'регита'],
+            'Сержень-Юрт': ['с. сержень-юрт', 'сержень-юрт'],
+            'Хиди-Хутор': ['с. хиди-хутор', 'хиди-хутор'],
+            'Цоци-Юрт': ['село цоци -юрт', 'село цоци -юрт', 'цоци-юрт', 'с цоци юрт', 'с. цоци-юрт'],
+            'Энгель-Юрт': ['с. энгель-юрт', 'энгель-юрт'],
+            'Ялхой-Мохк': ['с. ялхой-мохк', 'ялхой-мохк']
+        };
+
+        const COMPILED_PATTERNS = [];
+        for (let settlement in SETTLEMENT_PATTERNS) {
+            for (let pattern of SETTLEMENT_PATTERNS[settlement]) {
+                let escaped = pattern.toLowerCase().trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                escaped = escaped.replace(/\s+/g, '\\s+');
+                let regex = new RegExp(`(^|[^а-яё])(${escaped})([^а-яё]|$)`, 'i');
+                COMPILED_PATTERNS.push({ settlement, regex, length: pattern.length });
+            }
+        }
+        COMPILED_PATTERNS.sort((a, b) => b.length - a.length);
+
+        function extractSettlement(item) {
+            const fields = [item.address, item.objectName, item.city];
+            for (let field of fields) {
+                if (!field) continue;
+                let text = field.toLowerCase();
+                for (let { settlement, regex } of COMPILED_PATTERNS) {
+                    if (regex.test(text)) {
+                        return settlement;
+                    }
+                }
+            }
+            return 'Другое';
+        }
+
+        // Логика выпадающих таблиц (Dropdown)
+        function toggleDropdown(prefix) {
+            let menu = document.getElementById(prefix + 'SettlementMenu');
+            let btn = document.getElementById(prefix + 'SettlementBtn');
+            if (menu.classList.contains('active')) {
+                menu.classList.remove('active');
+                btn.classList.remove('active');
+            } else {
+                document.querySelectorAll('.settlement-dropdown-menu').forEach(m => m.classList.remove('active'));
+                document.querySelectorAll('.settlement-dropdown-btn').forEach(b => b.classList.remove('active'));
+                
+                menu.classList.add('active');
+                btn.classList.add('active');
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.settlement-dropdown-wrapper')) {
+                document.querySelectorAll('.settlement-dropdown-menu').forEach(m => m.classList.remove('active'));
+                document.querySelectorAll('.settlement-dropdown-btn').forEach(b => b.classList.remove('active'));
+            }
+        });
 
         // ================= 3. FIREBASE ИНИЦИАЛИЗАЦИЯ =================
         const configSMT = {
@@ -672,6 +860,7 @@
         let smtList = []; let homeList = []; let purgList = [];
         let smtSearchQuery = ''; let homeSearchQuery = ''; let purgSearchQuery = '';
         let currentSmtRegion = 'Все'; let currentHomeRegion = 'Все';
+        let currentSmtSettlement = 'Все'; let currentHomeSettlement = 'Все';
         let inventoryBatchesData = {};
 
         // Поиск
@@ -705,7 +894,6 @@
             }
             
             const addr = ((item.address || '') + ' ' + (item.objectName || '')).toLowerCase();
-            
             if (addr.includes('гудермесск') || addr.includes('г. гудермес') || addr.includes('г.гудермес')) return 'Гудермес';
             if (addr.includes('курчалоевск') || addr.includes('г. курчалой') || addr.includes('г.курчалой')) return 'Курчалой';
             if (addr.includes('грозненский р-н') || addr.includes('грозненский район')) return 'Грозный';
@@ -719,14 +907,75 @@
             if (addr.includes('гойты') || addr.includes('алхазурово') || addr.includes('гехи') || addr.includes('рошни-чу') || addr.includes('шалажи') || addr.includes('мартан-чу') || addr.includes('гойтинск')) return 'Урус-Мартан';
 
             let safeAddr = addr.replace(/грозненск\S*/g, '').replace(/гудермесск\S*/g, '').replace(/курчалоевск\S*/g, '').replace(/шалинск\S*/g, '').replace(/урус-мартановск\S*/g, '');
-            
             if (safeAddr.includes('гудермес')) return 'Гудермес';
             if (safeAddr.includes('курчало')) return 'Курчалой';
             if (safeAddr.includes('грозн')) return 'Грозный';
             if (safeAddr.includes('шали')) return 'Шали';
             if (safeAddr.includes('урус-мартан')) return 'Урус-Мартан';
-            
             return 'Другие';
+        }
+
+        function updateSettlementDropdown(tabPrefix, list, currentRegion, currentSettlement) {
+            let regionFiltered = list.filter(item => currentRegion === 'Все' || getRegion(item) === currentRegion);
+            let counts = {};
+            
+            regionFiltered.forEach(item => {
+                let set = item.settlement;
+                if (!counts[set]) counts[set] = { total: 0, today: 0 };
+                counts[set].total++;
+                if (isToday(parseDate(item.date))) counts[set].today++;
+            });
+
+            let menuEl = document.getElementById(tabPrefix + 'SettlementMenu');
+            let textEl = document.getElementById(tabPrefix + 'SettlementText');
+            menuEl.innerHTML = '';
+            
+            let totalAll = regionFiltered.length;
+            let todayAll = regionFiltered.filter(i => isToday(parseDate(i.date))).length;
+            
+            if (currentSettlement !== 'Все' && !counts[currentSettlement]) {
+                currentSettlement = 'Все';
+                if (tabPrefix === 'home') currentHomeSettlement = 'Все';
+                if (tabPrefix === 'smt') currentSmtSettlement = 'Все';
+            }
+
+            if (currentSettlement === 'Все') {
+                textEl.innerText = `Все нас. пункты (Всего: ${totalAll} | Сегодня: ${todayAll})`;
+            } else {
+                textEl.innerText = `${currentSettlement} (Всего: ${counts[currentSettlement].total} | Сегодня: ${counts[currentSettlement].today})`;
+            }
+
+            // Добавляем заголовок столбца "Сегодня"
+            menuEl.innerHTML += `
+                <div class="settlement-menu-header">
+                    <div>Сегодня</div>
+                </div>
+            `;
+
+            let allClass = currentSettlement === 'Все' ? 'settlement-item selected' : 'settlement-item';
+            menuEl.innerHTML += `
+                <div class="${allClass}" onclick="set${tabPrefix.charAt(0).toUpperCase() + tabPrefix.slice(1)}Settlement('Все')">
+                    <span class="set-name">Все населенные пункты</span>
+                    <div class="set-stats">
+                        <span class="set-total">Всего: ${totalAll}</span>
+                        <span class="set-today">+${todayAll}</span>
+                    </div>
+                </div>
+            `;
+
+            let sortedKeys = Object.keys(counts).sort((a,b) => a.localeCompare(b, 'ru'));
+            sortedKeys.forEach(k => {
+                let itemClass = currentSettlement === k ? 'settlement-item selected' : 'settlement-item';
+                menuEl.innerHTML += `
+                    <div class="${itemClass}" onclick="set${tabPrefix.charAt(0).toUpperCase() + tabPrefix.slice(1)}Settlement('${k}')">
+                        <span class="set-name">${k}</span>
+                        <div class="set-stats">
+                            <span class="set-total">Всего: ${counts[k].total}</span>
+                            <span class="set-today">+${counts[k].today}</span>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         // ================= 5. РАЗДЕЛЕНИЕ БАЗЫ: СМТ и НАСЕЛЕНИЕ =================
@@ -740,6 +989,7 @@
                     let item = data[key];
                     item.installer = normalizeName(item.installer);
                     item.id = key;
+                    item.settlement = extractSettlement(item); 
 
                     if (item.objectName && item.objectName.toLowerCase().includes('частный дом')) {
                         homeList.push(item);
@@ -751,8 +1001,11 @@
             smtList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
             homeList.sort((a, b) => parseDate(b.date) - parseDate(a.date));
 
-            renderSmtStats(); renderSmtSummary(); renderSmtTable();
+            updateSettlementDropdown('home', homeList, currentHomeRegion, currentHomeSettlement);
             renderHomeStats(); renderHomeSummary(); renderHomeTable();
+
+            updateSettlementDropdown('smt', smtList, currentSmtRegion, currentSmtSettlement);
+            renderSmtStats(); renderSmtSummary(); renderSmtTable();
         });
 
         // ================= 6. ЛОГИКА ВКЛАДКИ НАСЕЛЕНИЕ =================
@@ -760,12 +1013,24 @@
             currentHomeRegion = region;
             document.querySelectorAll('#homeRegionFilter .region-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
+            updateSettlementDropdown('home', homeList, currentHomeRegion, currentHomeSettlement);
+            renderHomeStats(); renderHomeSummary(); renderHomeTable();
+        }
+
+        function setHomeSettlement(val) {
+            currentHomeSettlement = val;
+            document.getElementById('homeSettlementMenu').classList.remove('active');
+            document.getElementById('homeSettlementBtn').classList.remove('active');
+            updateSettlementDropdown('home', homeList, currentHomeRegion, currentHomeSettlement);
             renderHomeStats(); renderHomeSummary(); renderHomeTable();
         }
 
         function getRegionFilteredHome() {
-            if (currentHomeRegion === 'Все') return homeList;
-            return homeList.filter(item => getRegion(item) === currentHomeRegion);
+            return homeList.filter(item => {
+                let regMatch = (currentHomeRegion === 'Все' || getRegion(item) === currentHomeRegion);
+                let setMatch = (currentHomeSettlement === 'Все' || item.settlement === currentHomeSettlement);
+                return regMatch && setMatch;
+            });
         }
 
         function renderHomeStats() {
@@ -782,7 +1047,6 @@
                 }
             });
 
-            // Топ-3 монтажника
             let topInstallers = Object.entries(installerCounts)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 3);
@@ -795,8 +1059,8 @@
             `).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Нет данных</div>';
 
             let statsHtml = `
-                <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок (район)</div></div>
-                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showHomeToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня (с 7:00)</div></div>
+                <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок</div></div>
+                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showHomeToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня</div></div>
                 <div class="stat-card" style="align-items:flex-start; padding:16px 20px;"><div class="label" style="font-weight:700; color:var(--text-primary);">🏆 Топ-3 монтажника:</div><div class="top-errors-list" style="margin-top:12px;">${topHtml}</div></div>
             `;
 
@@ -869,14 +1133,26 @@
             currentSmtRegion = region;
             document.querySelectorAll('#smtRegionFilter .region-btn').forEach(b => b.classList.remove('active'));
             btnElement.classList.add('active');
+            updateSettlementDropdown('smt', smtList, currentSmtRegion, currentSmtSettlement);
             renderSmtStats(); 
             renderSmtSummary(); 
             renderSmtTable();
         }
 
+        function setSmtSettlement(val) {
+            currentSmtSettlement = val;
+            document.getElementById('smtSettlementMenu').classList.remove('active');
+            document.getElementById('smtSettlementBtn').classList.remove('active');
+            updateSettlementDropdown('smt', smtList, currentSmtRegion, currentSmtSettlement);
+            renderSmtStats(); renderSmtSummary(); renderSmtTable();
+        }
+
         function getRegionFilteredSmt() {
-            if (currentSmtRegion === 'Все') return smtList;
-            return smtList.filter(item => getRegion(item) === currentSmtRegion);
+            return smtList.filter(item => {
+                let regMatch = (currentSmtRegion === 'Все' || getRegion(item) === currentSmtRegion);
+                let setMatch = (currentSmtSettlement === 'Все' || item.settlement === currentSmtSettlement);
+                return regMatch && setMatch;
+            });
         }
 
         function renderSmtStats() {
@@ -898,8 +1174,10 @@
                 }
             });
 
-            // Подсчет установок только для базы СМТ
-            smtList.forEach(item => {
+            // Подсчет установок СМТ (по отфильтрованному списку)
+            filteredList.forEach(item => {
+                if (isToday(parseDate(item.date))) todayCount++;
+
                 let serialStr = item.serial ? String(item.serial).replace(/\D/g, '') : '';
                 let matched = false;
 
@@ -924,13 +1202,9 @@
                 }
             });
 
-            filteredList.forEach(item => {
-                if (isToday(parseDate(item.date))) todayCount++;
-            });
-
             let statsHtml = `
-                <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок (район)</div></div>
-                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showSmtToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня (с 7:00)</div></div>
+                <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок</div></div>
+                <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showSmtToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня</div></div>
             `;
 
             dynamicBatches.forEach(b => {
