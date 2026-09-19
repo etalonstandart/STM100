@@ -211,6 +211,22 @@
         .stat-card.accent-green .number { color: var(--success-color); }
         .stat-card.accent-blue .number { color: var(--accent-blue); }
 
+        /* Новые стили для предотвращения обрезания таблиц слева и обеспечения скролла */
+        .batch-card {
+            align-items: stretch !important; /* Таблицы теперь будут выравниваться строго по левому краю */
+        }
+        
+        .table-scroll-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Скрываем ползунок в Firefox */
+            -ms-overflow-style: none; /* Скрываем ползунок в IE/Edge */
+        }
+        .table-scroll-wrapper::-webkit-scrollbar {
+            display: none; /* Скрываем ползунок в Chrome/Safari/Webkit */
+        }
+
         /* Для мини-таблиц остатков внутри карточек */
         .mini-table {
             width: 100%; font-size: 0.85rem; border-collapse: collapse; margin-top: 12px;
@@ -238,8 +254,8 @@
             border-bottom: 2px dashed rgba(0,0,0,0.1);
         }
 
-        .top-errors-list { margin-top: 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
-        .top-error-item { display: flex; justify-content: space-between; width: 100%; max-width: 220px; font-size: 0.8rem; color: var(--text-secondary); border-bottom: 1px solid rgba(0,0,0,0.04); padding: 4px 0; }
+        .top-errors-list { margin-top: 6px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; width: 100%; }
+        .top-error-item { display: flex; justify-content: space-between; width: 100%; max-width: 220px; font-size: 0.8rem; color: var(--text-secondary); border-bottom: 1px solid rgba(0,0,0,0.04); padding: 4px 0; margin: 0 auto;}
         .top-error-item .error-name { color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
         .top-error-item .error-count { font-weight: 600; color: var(--danger-color); background: #fdf2f8; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;}
 
@@ -398,7 +414,11 @@
             .header { flex-direction: column; align-items: stretch; gap: 12px; padding: 16px; }
             .logo { justify-content: center; }
             .status { justify-content: center; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            
+            /* Сетка адаптируется: узкие карточки в ряд, а широкие таблицы занимают всю ширину */
+            .stats-grid { grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 10px; }
+            .batch-card { grid-column: 1 / -1; } 
+            
             .table-toolbar { flex-direction: column; align-items: stretch; }
             .search-box { max-width: 100%; }
             th, td { padding: 8px 10px; font-size: 0.75rem; }
@@ -750,6 +770,15 @@
                    dateObj.getDate() === now.getDate();
         }
 
+        function isYesterday(dateObj) {
+            if (!dateObj) return false;
+            const now = new Date();
+            const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+            return dateObj.getFullYear() === yesterday.getFullYear() &&
+                   dateObj.getMonth() === yesterday.getMonth() &&
+                   dateObj.getDate() === yesterday.getDate();
+        }
+
         // ================= УНИФИКАЦИЯ ИМЕН И НАЗВАНИЙ =================
         function normalizeName(name) {
             if (!name || name === '-' || name === '—') return '-';
@@ -1064,10 +1093,12 @@
         function renderHomeStats() {
             let filteredList = getRegionFilteredHome();
             let todayCount = 0; 
+            let yesterdayCount = 0;
             let installerCounts = {};
 
             filteredList.forEach(item => {
                 if (isToday(parseDate(item.date))) todayCount++;
+                if (isYesterday(parseDate(item.date))) yesterdayCount++;
                 
                 let instName = item.installer || 'Неизвестно';
                 if (instName !== '-' && instName !== '—') {
@@ -1084,12 +1115,13 @@
                     <span class="error-name" style="color:var(--text-primary); font-weight: 500;">${e[0]}</span>
                     <span class="error-count" style="color: var(--success-color); background: #ecfdf5;">${e[1]}</span>
                 </div>
-            `).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Нет данных</div>';
+            `).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;text-align:center;">Нет данных</div>';
 
             let statsHtml = `
                 <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок</div></div>
+                <div class="stat-card accent-blue clickable" style="justify-content: center;" onclick="showHomeYesterday()"><div class="icon">⏮️</div><div class="number">${yesterdayCount}</div><div class="label">Вчера</div></div>
                 <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showHomeToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня</div></div>
-                <div class="stat-card" style="align-items:flex-start; padding:16px 20px;"><div class="label" style="font-weight:700; color:var(--text-primary);">🏆 Топ-3 монтажника:</div><div class="top-errors-list" style="margin-top:12px;">${topHtml}</div></div>
+                <div class="stat-card batch-card" style="padding:16px 20px;"><div class="label" style="font-weight:700; color:var(--text-primary); text-align: center; width: 100%;">🏆 Топ-3 монтажника:</div><div class="top-errors-list" style="margin-top:12px;">${topHtml}</div></div>
             `;
 
             document.getElementById('homeStatsGrid').innerHTML = statsHtml;
@@ -1153,6 +1185,7 @@
         }
 
         function showHomeToday() { buildSmtModalList(getRegionFilteredHome().filter(i => isToday(parseDate(i.date))), `Установлено сегодня (Население)`); }
+        function showHomeYesterday() { buildSmtModalList(getRegionFilteredHome().filter(i => isYesterday(parseDate(i.date))), `Установлено вчера (Население)`); }
         function showHomeInstaller(inst) { buildSmtModalList(getRegionFilteredHome().filter(i => i.installer === inst), `Население: ${inst}`); }
 
 
@@ -1186,6 +1219,7 @@
         function renderSmtStats() {
             let filteredList = getRegionFilteredSmt();
             let todayCount = 0; 
+            let yesterdayCount = 0;
             
             let dynamicBatches = [];
             for (let batchId in inventoryBatchesData) {
@@ -1205,6 +1239,7 @@
             // Подсчет установок СМТ (по отфильтрованному списку)
             filteredList.forEach(item => {
                 if (isToday(parseDate(item.date))) todayCount++;
+                if (isYesterday(parseDate(item.date))) yesterdayCount++;
 
                 let serialStr = item.serial ? String(item.serial).replace(/\D/g, '') : '';
                 let matched = false;
@@ -1232,10 +1267,16 @@
 
             let statsHtml = `
                 <div class="stat-card accent-cyan" style="justify-content: center;"><div class="icon">📊</div><div class="number">${filteredList.length}</div><div class="label">Установок</div></div>
+                <div class="stat-card accent-blue clickable" style="justify-content: center;" onclick="showSmtYesterday()"><div class="icon">⏮️</div><div class="number">${yesterdayCount}</div><div class="label">Вчера</div></div>
                 <div class="stat-card accent-green clickable" style="justify-content: center;" onclick="showSmtToday()"><div class="icon">📅</div><div class="number">${todayCount}</div><div class="label">Сегодня</div></div>
             `;
 
             dynamicBatches.forEach(b => {
+                // Исключаем партию "Прочее", чтобы освободить место
+                if (b.name && b.name.trim().toLowerCase() === 'прочее') {
+                    return;
+                }
+
                 let rowsHtml = '';
                 let hasData = false;
                 if (b.items) {
@@ -1321,57 +1362,29 @@
                 }
                 
                 let tableHtml = hasData ? `
-                    <table class="mini-table">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; padding-right:10px;">Тип</th>
-                                <th style="text-align: center; padding: 0 10px;">Ост.</th>
-                                <th style="text-align: center; padding-left:10px;">Уст.</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rowsHtml}</tbody>
-                    </table>
-                ` : '<div style="color:var(--text-muted); font-size:0.8rem; margin-top: 10px;">Нет данных</div>';
+                    <div class="table-scroll-wrapper">
+                        <table class="mini-table">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left; padding-right:10px;">Тип</th>
+                                    <th style="text-align: center; padding: 0 10px;">Ост.</th>
+                                    <th style="text-align: center; padding-left:10px;">Уст.</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                ` : '<div style="color:var(--text-muted); font-size:0.8rem; margin-top: 10px; text-align: center;">Нет данных</div>';
 
                 statsHtml += `
-                    <div class="stat-card" style="justify-content: flex-start; padding-top: 16px;">
-                        <div class="label" style="font-weight:700; margin-bottom:4px; color: var(--text-primary);">${b.name || 'Партия'}</div>
+                    <div class="stat-card batch-card" style="justify-content: flex-start; padding-top: 16px;">
+                        <div class="label" style="font-weight:700; margin-bottom:4px; color: var(--text-primary); text-align: center; width: 100%;">${b.name || 'Партия'}</div>
                         ${tableHtml}
                     </div>
                 `;
             });
 
-            let unknownKeys = Object.keys(unknownInstalls).sort();
-            if (unknownKeys.length > 0) {
-                let unknownRowsHtml = '';
-                unknownKeys.forEach(model => {
-                    unknownRowsHtml += `
-                        <tr>
-                            <td style="text-align: left; font-weight: 600; padding: 4px 10px 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${model}</td>
-                            <td style="text-align: center; font-weight: 600; color: var(--success-color); padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);">${unknownInstalls[model]}</td>
-                        </tr>
-                    `;
-                });
-                
-                let unknownHtml = `
-                    <table class="mini-table">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; padding-right:10px;">Модель</th>
-                                <th style="text-align: center;">Уст.</th>
-                            </tr>
-                        </thead>
-                        <tbody>${unknownRowsHtml}</tbody>
-                    </table>
-                `;
-
-                statsHtml += `
-                    <div class="stat-card" style="justify-content: flex-start; padding-top: 16px;">
-                        <div class="label" style="font-weight:700; margin-bottom:4px; color: var(--text-primary);">Неизвестные</div>
-                        ${unknownHtml}
-                    </div>
-                `;
-            }
+            // Карточка "Неизвестные" удалена по запросу
 
             document.getElementById('smtStatsGrid').innerHTML = statsHtml;
         }
@@ -1467,6 +1480,7 @@
         }
 
         function showSmtToday() { buildSmtModalList(getRegionFilteredSmt().filter(i => isToday(parseDate(i.date))), `Установлено сегодня (СМТ)`); }
+        function showSmtYesterday() { buildSmtModalList(getRegionFilteredSmt().filter(i => isYesterday(parseDate(i.date))), `Установлено вчера (СМТ)`); }
         function showSmtInstaller(inst) { buildSmtModalList(getRegionFilteredSmt().filter(i => i.installer === inst), `СМТ: ${inst}`); }
 
 
@@ -1660,12 +1674,12 @@
             });
 
             const topErrors = Object.entries(errStats).sort((a, b) => b[1] - a[1]).slice(0, 3);
-            let topHtml = topErrors.length ? topErrors.map(e => `<div class="top-error-item"><span class="error-name">${e[0]}</span><span class="error-count">${e[1]}</span></div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;">Проблем нет 🎉</div>';
+            let topHtml = topErrors.length ? topErrors.map(e => `<div class="top-error-item"><span class="error-name">${e[0]}</span><span class="error-count">${e[1]}</span></div>`).join('') : '<div style="color:var(--text-muted);font-size:0.8rem;margin-top:10px;text-align:center;">Проблем нет 🎉</div>';
 
             document.getElementById('purgStatsGrid').innerHTML = `
                 <div class="stat-card accent-blue"><div class="icon">🏭</div><div class="number">${purgList.length}</div><div class="label">Всего ТО ПУРГ</div></div>
                 <div class="stat-card accent-green clickable" onclick="showPurgToday()"><div class="icon">📅</div><div class="number">${today}</div><div class="label">ТО за сегодня</div></div>
-                <div class="stat-card" style="align-items:flex-start; padding:16px 20px;"><div class="label" style="font-weight:700; color:var(--text-primary);">🔥 Частые проблемы:</div><div class="top-errors-list">${topHtml}</div></div>
+                <div class="stat-card batch-card" style="padding:16px 20px;"><div class="label" style="font-weight:700; color:var(--text-primary); text-align: center; width: 100%;">🔥 Частые проблемы:</div><div class="top-errors-list">${topHtml}</div></div>
             `;
         }
 
