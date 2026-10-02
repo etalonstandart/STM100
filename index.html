@@ -213,18 +213,18 @@
 
         /* Новые стили для предотвращения обрезания таблиц слева и обеспечения скролла */
         .batch-card {
-            align-items: stretch !important; /* Таблицы теперь будут выравниваться строго по левому краю */
+            align-items: stretch !important;
         }
         
         .table-scroll-wrapper {
             width: 100%;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Скрываем ползунок в Firefox */
-            -ms-overflow-style: none; /* Скрываем ползунок в IE/Edge */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
         .table-scroll-wrapper::-webkit-scrollbar {
-            display: none; /* Скрываем ползунок в Chrome/Safari/Webkit */
+            display: none;
         }
 
         /* Для мини-таблиц остатков внутри карточек */
@@ -236,13 +236,13 @@
             padding-bottom: 8px; border-bottom: 2px dashed rgba(0,0,0,0.08); 
             color: var(--text-muted); font-weight: 600; font-size: 0.7rem; 
             text-transform: uppercase; background: transparent; position: static;
-            text-align: center; /* Центрирование по ТЗ */
-            white-space: nowrap; /* ИСПРАВЛЕНО: Запрет переноса строк для заголовков */
+            text-align: center;
+            white-space: nowrap;
         }
         .mini-table td {
             padding: 8px 0; border-bottom: 1px dashed rgba(0,0,0,0.06);
-            white-space: nowrap; /* ИСПРАВЛЕНО: Запрет переноса строк для длинных названий */
-            text-align: center; /* Центрирование по ТЗ */
+            white-space: nowrap;
+            text-align: center;
         }
         .mini-table tr:last-child td { border-bottom: none; }
         
@@ -297,19 +297,18 @@
         
         /* СВОДНАЯ ТАБЛИЦА БЕЗ ВНУТРЕННЕЙ ПРОКРУТКИ И БЕЗ ПУСТЫХ ЗОН */
         .summary-table-responsive {
-            overflow-x: auto; /* Позволяет скроллить на очень узких экранах, если вдруг не влезет */
+            overflow-x: auto; 
             overflow-y: visible;
             max-height: none;
         }
 
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 1600px; }
         
-        /* ИСПРАВЛЕНО: ограничение ширины сводной таблицы */
         .summary-table-responsive table { 
-            min-width: unset; /* Отменяем 1600px широкой таблицы */
+            min-width: unset; 
             width: 100%; 
-            max-width: 800px; /* Ограничиваем максимальную ширину на ПК, чтобы не было пустых зон */
-            margin: 0 auto; /* Центрируем таблицу внутри контейнера */
+            max-width: 800px; 
+            margin: 0 auto; 
         }
         
         th {
@@ -826,7 +825,7 @@
             'Джалка': ['с. джалка', 'джалка'],
             'Джугурты': ['джугурты', 'с джугурты', 'с.джугурты', 'с. джугурты', 'село джугурты', 'с. джугурды', 'джугурды', 'с джугурды', 'с. джугурда', 'джугкрды', 'джа гурты', 'с.жугурты', 'село жугурды', 'село жугурты', 'с.джигурта'],
             'Дуба-Юрт': ['с. дуба-юрт', 'дуба-юрт'],
-            'Илсхан-Юрт': ['село илсхан-юрт', 'с. илсхан-юрт', 'с.илсхан-юрт', 'илсхан-юрт'],
+            'Илсхан-Юрт': ['село илсхан-юрт', 'с. илсхан-юрт', 'с.илсхан-юрт', 'илсхан-юрт', 'илхан юрт', 'илхсан юрт'],
             'Ишхой-Юрт': ['с. ишхой-юрт', 'ишхой-юрт'],
             'Кади-Юрт': ['с. кади-юрт', 'кади-юрт'],
             'Комсомольское': ['с. комсомольское', 'комсомольское'],
@@ -845,7 +844,7 @@
             'Регита': ['с. регита', 'регита'],
             'Сержень-Юрт': ['с. сержень-юрт', 'сержень-юрт'],
             'Хиди-Хутор': ['с. хиди-хутор', 'хиди-хутор'],
-            'Цоци-Юрт': ['село цоци -юрт', 'село цоци -юрт', 'цоци-юрт', 'с цоци юрт', 'с. цоци-юрт'],
+            'Цоци-Юрт': ['село цоци -юрт', 'село цоци -юрт', 'цоци-юрт', 'с цоци юрт', 'с. цоци-юрт', 'цоци юрт'],
             'Энгель-Юрт': ['с. энгель-юрт', 'энгель-юрт'],
             'Ялхой-Мохк': ['с. ялхой-мохк', 'ялхой-мохк']
         };
@@ -854,7 +853,8 @@
         for (let settlement in SETTLEMENT_PATTERNS) {
             for (let pattern of SETTLEMENT_PATTERNS[settlement]) {
                 let escaped = pattern.toLowerCase().trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                escaped = escaped.replace(/\s+/g, '\\s+');
+                // Делаем пробелы, тире и точки взаимозаменяемыми и необязательными (работает гибко)
+                escaped = escaped.replace(/(?:\\-|\s)+/g, '[-.\\s]*');
                 let regex = new RegExp(`(^|[^а-яё])(${escaped})([^а-яё]|$)`, 'i');
                 COMPILED_PATTERNS.push({ settlement, regex, length: pattern.length });
             }
@@ -862,7 +862,8 @@
         COMPILED_PATTERNS.sort((a, b) => b.length - a.length);
 
         function extractSettlement(item) {
-            const fields = [item.address, item.objectName, item.city];
+            // Исключили item.city, чтобы район не переопределял населенный пункт
+            const fields = [item.address, item.objectName];
             for (let field of fields) {
                 if (!field) continue;
                 let text = field.toLowerCase();
